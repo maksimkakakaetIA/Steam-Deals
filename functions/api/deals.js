@@ -5,13 +5,11 @@ const dec = (s) =>
    .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&trade;|&reg;/g, "");
 
 function parse(page) {
-  // Делим страницу по началу каждой игры
   const chunks = page.split('<a href="https://store.steampowered.com/app/').slice(1);
   const out = [];
   
   for (const chunk of chunks) {
-    // Берем только первые 3-4 тысячи символов чанка (там лежит вся карточка игры, дальше начинается следующая)
-    const b = chunk.slice(0, 4000);
+    const b = chunk.slice(0, 5000); // Берем кусок с запасом
 
     const id = (b.match(/^(\d+)/) || [])[1];
     const title = (b.match(/<span class="title">([^<]*)<\/span>/) || [])[1];
@@ -20,30 +18,21 @@ function parse(page) {
     
     if (!id || !title || !fin || !disc || disc >= 100) continue;
     
-    // --- ПОИСК ТЕГОВ (ЖАНРОВ) ---
+    // Ищем теги
     const tags = [];
-    const tagMatches = b.matchAll(/<span class="top_tag">([^<]*)<\/span>/g);
-    for (const match of tagMatches) {
-       tags.push(dec(match[1].trim()));
+    const tagRegex = /<span class="top_tag">([^<]*)<\/span>/g;
+    let matchTag;
+    while ((matchTag = tagRegex.exec(b)) !== null) {
+      tags.push(dec(matchTag[1].trim()));
     }
 
-    // --- ПОИСК ЯЗЫКОВ ---
-    // Если в блоке есть тег data-lang или упоминание русского, ставим true
-    let hasRussian = false;
-    if (b.includes('data-lang="russian"') || b.includes('data-lang="*russian*"') || b.includes('>Русский<') || b.includes('>Russian<') || b.includes('russian,')) {
-        hasRussian = true;
-    }
+    // Ищем русский язык (Steam часто пишет его в атрибутах или скрытых тегах)
+    const hasRussian = b.toLowerCase().includes('russian') || b.includes('Русский');
 
-    // --- ПОИСК ВРЕМЕНИ ОКОНЧАНИЯ СКИДКИ ---
-    // Steam хранит время в атрибуте data-discount-end (в Unix формате)
+    // Ищем время окончания скидки
     let discountEnd = 0;
     const endMatch = b.match(/data-discount-end="(\d+)"/);
-    if (endMatch) {
-        discountEnd = +endMatch[1];
-    } else {
-        // Если не нашли, ставим заглушку (текущее время + 2 дня), чтобы "Успей купить" работало хоть как-то
-        discountEnd = Math.floor(Date.now() / 1000) + 172800;
-    }
+    if (endMatch) discountEnd = +endMatch[1];
 
     const tip = (b.match(/data-tooltip-html="([^"]*)"/) || [])[1] || "";
     const m = tip.match(/(\d+)%[^\d]*([\d\s,.\u00a0\u202f]+)/);
@@ -77,16 +66,18 @@ export async function onRequestGet({ request }) {
   const start = Math.max(0, parseInt(u.searchParams.get("start") || "0", 10) || 0);
   if (!CUR[cc]) return json({ error: "bad cc" }, 400);
 
-  const base =
-    "https://store.steampowered.com/search/results/?query&start=" + start +
+  const base = "https://store.steampowered.com/search/results/?query&start=" + start +
     "&count=50&dynamic_data=&sort_by=_ASC&specials=1&category1=998&infinite=1&cc=" + cc;
+    
   const headers = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
     "Accept": "application/json, text/javascript, */*; q=0.01",
     "Accept-Language": "ru-RU,ru;q=0.9,en;q=0.8",
     "X-Requested-With": "XMLHttpRequest",
     "Referer": "https://store.steampowered.com/search/?specials=1",
+    "Cookie": "birthtime=283993201; lastagecheckage=1-0-1999; Steam_Language=russian"
   };
+  
   let last = "";
   for (const lang of ["russian", "english"]) {
     try {
@@ -96,6 +87,10 @@ export async function onRequestGet({ request }) {
       let j;
       try { j = JSON.parse(txt); } catch (e) { last = "Не JSON"; continue; }
       const { out, raw } = parse(j.results_html || "");
+      
+      // Если Steam отдал 0 игр для этой валюты (глюк), пробуем английскую версию страницы
+      if (out.length === 0 && lang === "russian") continue; 
+      
       return json({ cc, cur: CUR[cc], start, next: raw ? start + raw : 0, total: j.total_count || 0, items: out });
     } catch (e) {
       last = String(e.message || e);
