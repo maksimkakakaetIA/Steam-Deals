@@ -361,4 +361,29 @@ function more(){
   if (shown >= list.length) {
     $("more").style.display = "none";
     if (list.length > 0) { var endRow = document.createElement("tr"); endRow.className = "end-row"; endRow.innerHTML = '<td colspan="8">🏁 Это все игры, которые удалось найти</td>'; tb.appendChild(endRow); }
-  }
+  } else { $("more").style.display = "block"; }
+}
+
+[].forEach.call(document.querySelectorAll("th"),function(t){t.onclick=function(){if(!t.dataset.k)return;var k=t.dataset.k;if(sk===k)dir=-dir;else{sk=k;dir=k==="n"||k==="p"||k==="o"?1:-1}
+  if(isRecMode) { isRecMode = false; $("btnRec").classList.remove('active'); $("btnRec").textContent = "🔥 Рекомендации"; }
+  apply()
+}});
+
+["q","md","mp","ruFilter","tagFilter","baseGameFilter"].forEach(function(i){$(i).oninput=apply; $(i).onchange=apply;});
+$("more").onclick=more; $("refresh").onclick=function(){ localStorage.removeItem('steam_cache_data'); load(); };
+
+$("btnRec").onclick=function(){ isRecMode = !isRecMode; showHiddenOnly = false; showFavOnly = false; isSoonMode = false; isProfitMode = false; $("btnFav").classList.remove('active'); $("btnShowHidden").classList.remove('active'); $("btnSoon").classList.remove('active'); $("btnProfit").classList.remove('active'); this.classList.toggle('active', isRecMode); this.textContent = isRecMode ? "⏹ Стоп" : "🔥 Рекомендации"; apply(); };
+$("btnFav").onclick=function(){ showFavOnly = !showFavOnly; isRecMode = false; showHiddenOnly = false; isSoonMode = false; isProfitMode = false; $("btnRec").classList.remove('active'); $("btnShowHidden").classList.remove('active'); $("btnSoon").classList.remove('active'); $("btnProfit").classList.remove('active'); this.classList.toggle('active', showFavOnly); apply(); };
+$("btnShowHidden").onclick=function(){ showHiddenOnly = !showHiddenOnly; isRecMode = false; showFavOnly = false; isSoonMode = false; isProfitMode = false; $("btnFav").classList.remove('active'); $("btnRec").classList.remove('active'); $("btnSoon").classList.remove('active'); $("btnProfit").classList.remove('active'); this.classList.toggle('active', showHiddenOnly); apply(); };
+
+// Новые кнопки
+$("btnSoon").onclick=function(){ isSoonMode = !isSoonMode; isRecMode = false; showFavOnly = false; showHiddenOnly = false; isProfitMode = false; $("btnRec").classList.remove('active'); $("btnFav").classList.remove('active'); $("btnShowHidden").classList.remove('active'); $("btnProfit").classList.remove('active'); this.classList.toggle('active', isSoonMode); apply(); };
+$("btnProfit").onclick=function(){ isProfitMode = !isProfitMode; isRecMode = false; showFavOnly = false; showHiddenOnly = false; isSoonMode = false; $("btnRec").classList.remove('active'); $("btnFav").classList.remove('active'); $("btnShowHidden").classList.remove('active'); $("btnSoon").classList.remove('active'); this.classList.toggle('active', isProfitMode); apply(); };
+$("btnRandom").onclick=function(){ if(list.length > 0) { const r = list[Math.floor(Math.random() * list.length)]; openModal(r); } else { showToast("Список пуст", "OK", ()=>{}); } };
+
+$("btnReset").onclick=function(){ $("q").value=""; $("md").value="0"; $("mp").value=""; $("ruFilter").checked=false; $("tagFilter").value="all"; $("baseGameFilter").checked=false; isRecMode=false; showFavOnly=false; showHiddenOnly=false; isSoonMode=false; isProfitMode=false; $("btnRec").classList.remove('active'); $("btnFav").classList.remove('active'); $("btnShowHidden").classList.remove('active'); $("btnSoon").classList.remove('active'); $("btnProfit").classList.remove('active'); apply(); };
+$("reg").onchange=function(){saveFilters(); localStorage.removeItem('steam_cache_data'); load()};
+load();
+</script>
+</body>
+</html>
