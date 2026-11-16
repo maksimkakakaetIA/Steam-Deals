@@ -118,7 +118,18 @@ function more(){
   for(var i=shown;i<end;i++){
     var g=list[i],tr=document.createElement("tr");tr.className="row";tr.style.transitionDelay=((i-shown)%12)*35+"ms";
     var cls=g.d>=75?"":g.d>=40?" m":" l",col=g.r>=80?"var(--accent2)":g.r>=60?"#f1c40f":"#e74c3c";
-    tr.innerHTML='<td class="g"><div class="gi"><img loading="lazy" alt="" src="https://cdn.cloudflare.steamstatic.com/steam/apps/'+g.i+'/header.jpg" onerror="this.style.visibility=\'hidden\'"><a target="_blank" rel="noopener" href="https://store.steampowered.com/app/'+g.i+'/?cc='+data.cc+'">'+esc(g.n)+'</a></div></td>'+
+    
+    // --- БЛОК С КАРТИНКОЙ И ССЫЛКОЙ ---
+    // Делаем безопасный ID, убираем лишние пробелы, если они есть
+    var safeId = String(g.i).trim();
+    
+    tr.innerHTML='<td class="g"><div class="gi">' +
+    // Меняем header.jpg на capsule_231x87.jpg (лучше для списка) и добавляем заглушку при ошибке
+    '<img loading="lazy" alt="" src="https://cdn.cloudflare.steamstatic.com/steam/apps/'+safeId+'/capsule_231x87.jpg" onerror="this.src=\'https://cdn.cloudflare.steamstatic.com/steam/apps/'+safeId+'/header.jpg\'; this.onerror=null;">' +
+    // Ссылка на игру
+    '<a target="_blank" rel="noopener" href="https://store.steampowered.com/app/'+safeId+'/?cc='+data.cc+'">'+esc(g.n)+'</a></div></td>'+
+    // ---------------------------------
+    
     '<td><span class="pill'+cls+'">−'+g.d+'%</span></td><td><b class="pr">'+money(g.p)+'</b></td><td><s>'+money(g.o)+'</s></td>'+
     '<td><div class="rt"><div class="rb"><i data-w="'+g.r+'" style="background:'+col+'"></i></div>'+g.r+'%</div></td><td>'+g.v.toLocaleString("ru-RU")+'</td>';
     tb.appendChild(tr);io.observe(tr);
