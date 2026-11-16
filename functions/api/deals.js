@@ -9,7 +9,7 @@ function parse(page) {
   const out = [];
   
   for (const chunk of chunks) {
-    const b = chunk.slice(0, 5000); // Берем кусок с запасом
+    const b = chunk.slice(0, 5000);
 
     const id = (b.match(/^(\d+)/) || [])[1];
     const title = (b.match(/<span class="title">([^<]*)<\/span>/) || [])[1];
@@ -18,18 +18,22 @@ function parse(page) {
     
     if (!id || !title || !fin || !disc || disc >= 100) continue;
     
-    // Ищем теги
+    // --- ЖЕЛЕЗОБЕТОННЫЙ ПАРСИНГ ТЕГОВ (ЖАНРОВ) ---
     const tags = [];
-    const tagRegex = /<span class="top_tag">([^<]*)<\/span>/g;
-    let matchTag;
-    while ((matchTag = tagRegex.exec(b)) !== null) {
-      tags.push(dec(matchTag[1].trim()));
+    const tagBlockMatch = b.match(/<div class="col search_tags[^>]*>([\s\S]*?)<\/div>/);
+    if (tagBlockMatch) {
+        // Ищем все теги <a>...</a> внутри этого блока
+        const tagLinks = tagBlockMatch[1].matchAll(/<a[^>]*>([^<]*)<\/a>/g);
+        for (const match of tagLinks) {
+            let cleanTag = dec(match[1].trim());
+            if (cleanTag) tags.push(cleanTag);
+        }
     }
 
-    // Ищем русский язык (Steam часто пишет его в атрибутах или скрытых тегах)
+    // --- ЯЗЫКИ ---
     const hasRussian = b.toLowerCase().includes('russian') || b.includes('Русский');
 
-    // Ищем время окончания скидки
+    // --- ВРЕМЯ СКИДКИ ---
     let discountEnd = 0;
     const endMatch = b.match(/data-discount-end="(\d+)"/);
     if (endMatch) discountEnd = +endMatch[1];
@@ -53,60 +57,4 @@ function parse(page) {
   }
   return { out, raw: chunks.length };
 }
-
-const json = (obj, status = 200) =>
-  new Response(JSON.stringify(obj), {
-    status,
-    headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "public, max-age=300" },
-  });
-
-export async function onRequestGet({ request }) {
-  const u = new URL(request.url);
-  const cc = (u.searchParams.get("cc") || "us").toLowerCase();
-  const start = Math.max(0, parseInt(u.searchParams.get("start") || "0", 10) || 0);
-  if (!CUR[cc]) return json({ error: "bad cc" }, 400);
-
-  const base = "https://store.steampowered.com/search/results/?query&start=" + start +
-    "&count=50&dynamic_data=&sort_by=_ASC&specials=1&category1=998&infinite=1&cc=" + cc;
-    
-  const headers = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-    "Accept": "application/json, text/javascript, */*; q=0.01",
-    "Accept-Language": "ru-RU,ru;q=0.9,en;q=0.8",
-    "X-Requested-With": "XMLHttpRequest",
-    "Referer": "https://store.steampowered.com/search/?specials=1",
-    "Cookie": "birthtime=283993201; lastagecheckage=1-0-1999; Steam_Language=russian"
-  };
-  
-  let last = "";
-  for (const lang of ["russian", "english"]) {
-    try {
-      const res = await fetch(base + "&l=" + lang, { headers });
-      const txt = await res.text();
-      if (!txt.trim()) { last = "Steam вернул пустой ответ"; continue; }
-      let j;
-      try { j = JSON.parse(txt); } catch (e) { last = "Не JSON"; continue; }
-      const { out, raw } = parse(j.results_html || "");
-      
-      // Если Steam отдал 0 игр для этой валюты (глюк), пробуем английскую версию страницы
-      if (out.length === 0 && lang === "russian") continue; 
-      
-      return json({ cc, cur: CUR[cc], start, next: raw ? start + raw : 0, total: j.total_count || 0, items: out });
-    } catch (e) {
-      last = String(e.message || e);
-    }
-  }
-  return json({ error: last }, 502);
-}
-
-export async function onRequestPost({ request }) {
-  try {
-    const { appid } = await request.json();
-    if (!appid) return json({ error: "no appid" }, 400);
-    const res = await fetch(`https://api.steampowered.com/ISteamUserStats/GetNumberOfCurrentPlayers/v1/?appid=${appid}`);
-    const data = await res.json();
-    return json(data);
-  } catch(e) {
-    return json({ error: "Steam API Error" }, 500);
-  }
-}
+// ... остальной код (json, onRequestGet, onRequestPost) оставляешь как было ...
