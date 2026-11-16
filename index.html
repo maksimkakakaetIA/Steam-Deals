@@ -21,6 +21,17 @@ h1{text-align:center;font-size:clamp(28px,6vw,48px);margin:10px 0 6px;background
 .badge{background:var(--surface);border:1px solid var(--border);padding:4px 10px;border-radius:20px;font-size:13px;display:flex;align-items:center;gap:6px;}
 .dot{width:10px;height:10px;border-radius:50%;background:var(--accent2);animation:pulse 1.6s infinite}
 @keyframes pulse{0%{box-shadow:0 0 0 0 var(--accent2)}100%{box-shadow:0 0 0 12px transparent}}
+
+/* Стили для плавного счетчика */
+#siteOnline {
+  display: inline-block;
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.3s;
+}
+#siteOnline.update-anim {
+  transform: translateY(-4px) scale(1.1);
+  color: var(--accent2);
+}
+
 .controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:16px;align-items:center;}
 select,input,button{font:inherit;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:999px;padding:8px 14px;transition:transform .2s,border-color .2s;outline:none;}
 input{width:150px}input[type=search]{width:200px}
@@ -69,7 +80,7 @@ b.pr{color:var(--accent2);font-size:15px} s{color:var(--muted)}
 
 <div class="live">
   <div class="badge"><span class="dot"></span><span id="status">Загрузка…</span></div>
-  <div class="badge">👀 На сайте: <b id="siteOnline" style="color:var(--accent);">...</b></div>
+  <div class="badge">👀 На сайте: <b id="siteOnline" style="color:var(--accent);">0</b></div>
 </div>
 
 <div class="controls">
@@ -106,24 +117,29 @@ b.pr{color:var(--accent2);font-size:15px} s{color:var(--muted)}
 <div id="toast-container"></div>
 
 <script>
-// --- СЧЕТЧИК ОНЛАЙНА САЙТА (ЧЕРЕЗ ДРУГОЙ API) ---
-// Hitokoto API (работает быстро и без блокировок)
+// --- ПЛАВНЫЙ СЧЕТЧИК ОНЛАЙНА ---
+let lastOnline = 0;
 async function updateSiteCounter() {
   try {
-    const r = await fetch("https://api.countapi.xyz/hit/steam-deals-pro/visits");
+    const r = await fetch("/api/online");
     const data = await r.json();
-    if(data && data.value) {
-        document.getElementById('siteOnline').textContent = data.value; 
-    } else {
-        document.getElementById('siteOnline').textContent = Math.floor(Math.random() * 5) + 1;
+    const el = document.getElementById('siteOnline');
+    
+    if (data.online !== undefined && data.online !== lastOnline) {
+      lastOnline = data.online;
+      el.textContent = data.online;
+      
+      // Запускаем анимацию прыжка
+      el.classList.remove('update-anim');
+      void el.offsetWidth; // Хак для перезапуска анимации
+      el.classList.add('update-anim');
     }
   } catch(e) { 
-      // Если API не ответил, просто показываем рандомную цифру, чтобы не висело "..."
-      document.getElementById('siteOnline').textContent = Math.floor(Math.random() * 5) + 1; 
+    // Если ошибка, ничего не делаем, оставляем старое значение
   }
 }
 updateSiteCounter();
-setInterval(updateSiteCounter, 30000);
+setInterval(updateSiteCounter, 15000); // Каждые 15 секунд
 
 // --- ТЕМЫ ---
 const root = document.documentElement, themeToggle = document.getElementById('themeToggle');
