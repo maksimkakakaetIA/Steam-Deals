@@ -27,7 +27,6 @@ h1{text-align:center;font-size:clamp(28px,6vw,48px);margin:10px 0 6px;background
 #siteOnline{display:inline-block;transition:transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.3s;}
 #siteOnline.update-anim{transform:translateY(-4px) scale(1.1);color:var(--accent2);}
 
-/* Панель */
 .panel-container{display:flex;flex-direction:column;gap:15px;margin-bottom:20px;background:rgba(20,29,49,0.6);padding:15px;border-radius:16px;border:1px solid var(--border);box-shadow:0 4px 15px rgba(0,0,0,0.2);}
 [data-theme="light"] .panel-container{background:#fff;}
 .panel-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;align-items:center;}
@@ -91,7 +90,6 @@ b.pr{color:var(--accent2);font-size:15px} s{color:var(--muted)}
 .modal-btn{display:block;background:var(--accent);color:#0b1220;text-decoration:none;padding:12px;border-radius:10px;font-weight:bold;margin-bottom:10px;}
 .modal-close{background:transparent;border:none;color:var(--muted);cursor:pointer;text-decoration:underline;}
 
-/* --- МОБИЛЬНЫЙ АДАПТИВ (КАРТОЧКИ) --- */
 @media (max-width: 800px) {
     .tw { background: transparent; border: none; box-shadow: none; overflow: visible; }
     table, thead, tbody, th, td, tr { display: block; width: 100%; }
@@ -208,7 +206,6 @@ b.pr{color:var(--accent2);font-size:15px} s{color:var(--muted)}
 <div id="toast-container"></div>
 
 <script>
-// --- БЕЗОПАСНЫЙ СЧЕТЧИК ОНЛАЙНА ---
 async function updateSiteCounter() {
   try {
     let uid = localStorage.getItem('steam_uid');
@@ -220,7 +217,6 @@ async function updateSiteCounter() {
 }
 updateSiteCounter(); setInterval(updateSiteCounter, 15000);
 
-// --- ТЕМЫ ---
 const root = document.documentElement, themeToggle = document.getElementById('themeToggle');
 let currentTheme = localStorage.getItem('steam_theme') || 'system';
 function applyTheme(theme) {
@@ -235,7 +231,6 @@ themeToggle.onclick = () => {
   localStorage.setItem('steam_theme', currentTheme); applyTheme(currentTheme); 
 };
 
-// --- МОДАЛКА ---
 function openModal(game) {
   document.getElementById('modalImg').src = `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.i}/header.jpg`;
   document.getElementById('modalTitle').textContent = game.n;
@@ -245,7 +240,6 @@ function openModal(game) {
 }
 function closeModal() { document.getElementById('modal').classList.remove('show'); }
 
-// --- ЛОГИКА ---
 var $=function(i){return document.getElementById(i)},data=null,sk="d",dir=-1,shown=0,PAGE=60,list=[];
 var mode = "default"; 
 
@@ -268,11 +262,7 @@ function getTimerText(endUnix) {
   if (!endUnix) return "";
   let diff = endUnix - Math.floor(Date.now() / 1000);
   if (diff < 0) return "Скоро закончится";
-  
-  let d = Math.floor(diff / 86400);
-  let h = Math.floor((diff % 86400) / 3600);
-  let m = Math.floor((diff % 3600) / 60);
-  
+  let d = Math.floor(diff / 86400); let h = Math.floor((diff % 86400) / 3600); let m = Math.floor((diff % 3600) / 60);
   if (d > 0) return `⏳ ${d} д. ${h} ч.`;
   if (h > 0) return `⏳ ${h} ч. ${m} мин.`;
   return `⏳ ${m} мин.`;
@@ -292,9 +282,7 @@ async function checkOnline(id, btn) {
 function copyLink(id, btn) {
   const url = `https://store.steampowered.com/app/${id}/`;
   navigator.clipboard.writeText(url).then(() => {
-    btn.style.color = "var(--accent2)";
-    showToast(`Ссылка скопирована!`, "OK", ()=>{});
-    setTimeout(()=> btn.style.color = "var(--muted)", 2000);
+    btn.style.color = "var(--accent2)"; showToast(`Ссылка скопирована!`, "OK", ()=>{}); setTimeout(()=> btn.style.color = "var(--muted)", 2000);
   });
 }
 
@@ -317,18 +305,17 @@ function toggleFav(id) { if(favGames.has(id)) favGames.delete(id); else favGames
 var tok=0; const delay = ms => new Promise(res => setTimeout(res, ms));
 let allTags = new Set();
 
-// --- УПРОЩЕННАЯ ЗАГРУЗКА ---
 async function load(){
   let cachedData = localStorage.getItem('steam_cache_data');
   let cacheTime = localStorage.getItem('steam_cache_time');
   if (cachedData && cacheTime && (Date.now() - cacheTime < 30 * 60 * 1000)) {
-      data = JSON.parse(cachedData); $("status").textContent = "Из кэша · " + data.items.length + " игр"; apply(); backgroundLoad(true); return;
+      data = JSON.parse(cachedData); $("status").textContent = "Из кэша · " + data.items.length + " игр"; apply(); return;
   }
   $("tb").innerHTML='<tr><td colspan="8"><div class="msg"><div class="sp"></div>Собираю скидки...</div></td></tr>';
-  backgroundLoad(false);
+  backgroundLoad();
 }
 
-async function backgroundLoad(isSilent){
+async function backgroundLoad(){
   var my=++tok,cc=$("reg").value,start=0,total=1,map=new Map(),first=true;
   allTags.clear();
   
@@ -338,14 +325,16 @@ async function backgroundLoad(isSilent){
       var t=await r.text(),j; try{j=JSON.parse(t)}catch(x){ throw new Error("Ошибка сервера"); }
       if(my!==tok)return; if(!r.ok) break;
       
-      j.items.forEach(function(g){ 
-          if(g.p > 0) { map.set(g.i,g); if(g.t) g.t.forEach(tag => allTags.add(tag)); }
-      });
+      if (j.items && j.items.length > 0) {
+          j.items.forEach(function(g){ 
+              if(g.p > 0) { map.set(g.i,g); if(g.t) g.t.forEach(tag => allTags.add(tag)); }
+          });
+      }
       
       total=j.total;start=j.next;
       if(first) { first = false; data = { cc: cc, cur: j.cur, total: total, items: Array.from(map.values()) }; fillTags(allTags); apply(); $("status").textContent = "Live · Догружаю в фоне..."; }
-      if(!isSilent && start < total && start < 2000) await delay(1000); 
-      if(!start)break;
+      if(start < total && start < 2000) await delay(1000); 
+      if(!start || start === 0) break;
     }
     
     if(map.size === 0) {
@@ -384,10 +373,7 @@ function apply(){
 
   if (mode === "hidden") { list = data.items.filter(g => hiddenGames.has(g.i)); $("count").textContent = "🗑 Скрытые: " + list.length; }
   else if (mode === "fav") { list = data.items.filter(g => favGames.has(g.i)); $("count").textContent = "⭐ Избранное: " + list.length; }
-  else if (mode === "soon") { 
-      list = list.filter(g => g.end === 0 || (g.end - Date.now()/1000) < 86400); 
-      $("count").textContent = "⏳ Скидки 24ч: " + list.length; 
-  }
+  else if (mode === "soon") { list = list.filter(g => g.end === 0 || (g.end - Date.now()/1000) < 86400); $("count").textContent = "⏳ Скидки 24ч: " + list.length; }
   else if (mode === "profit") { list.sort((a,b) => (b.d/b.p) - (a.d/a.p)); $("count").textContent = "💎 Выгода"; }
   else if (mode === "rec") { list.sort((a, b) => (b.d * b.r) - (a.d * a.r)); list = list.slice(0, 15); $("count").textContent = "🔥 Топ-15"; }
   else { list.sort(function(a,b){ var x=a[sk],y=b[sk]; if(sk==="n") return dir*x.localeCompare(y); return x===y?b.v-a.v:dir*(x-y) }); $("count").textContent="Найдено: "+list.length; }
