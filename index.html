@@ -59,7 +59,6 @@ s{color:var(--muted)}
 .btn-restore{background:var(--accent2);color:#0b1220;border:none;border-radius:6px;padding:6px 12px;font-weight:bold;font-size:12px;cursor:pointer;}
 .btn-restore:hover{background:#b8e614;}
 
-/* Тост уведомление */
 #toast-container{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);z-index:1000;display:flex;flex-direction:column;gap:10px;pointer-events:none;}
 .toast{background:var(--surface);border:1px solid var(--accent2);color:var(--text);padding:12px 20px;border-radius:12px;display:flex;align-items:center;gap:15px;box-shadow:0 10px 30px rgba(0,0,0,0.5);opacity:0;transform:translateY(20px);transition:all 0.3s;pointer-events:auto;}
 .toast.show{opacity:1;transform:translateY(0);}
@@ -109,34 +108,25 @@ var io=new IntersectionObserver(function(es){es.forEach(function(x){if(x.isInter
 function money(v){try{return new Intl.NumberFormat("ru-RU",{style:"currency",currency:data.cur,maximumFractionDigits:v%1?2:0}).format(v)}catch(e){return v.toFixed(2)}}
 function esc(s){return s.replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
 
-// Функция показа тоста
 function showToast(id, name) {
   var container = $("toast-container");
   var toast = document.createElement("div");
   toast.className = "toast";
   toast.innerHTML = '<span>Игра <b>'+esc(name)+'</b> скрыта</span><button onclick="undoHide('+id+', this)">Отменить</button>';
   container.appendChild(toast);
-  
-  // Анимация появления
   setTimeout(() => toast.classList.add("show"), 10);
-
-  // Таймер на 5 секунд
   var timer = setTimeout(() => {
     toast.classList.remove("show");
     setTimeout(() => toast.remove(), 300);
   }, 5000);
-
-  // Сохраняем таймер в объект тоста, чтобы можно было отменить
   toast.dataset.timer = timer;
 }
 
-// Отмена скрытия
 function undoHide(id, btn) {
   var toast = btn.closest('.toast');
   clearTimeout(toast.dataset.timer);
   toast.classList.remove("show");
   setTimeout(() => toast.remove(), 300);
-
   hiddenGames.delete(id);
   localStorage.setItem('steam_hidden', JSON.stringify(Array.from(hiddenGames)));
   apply();
@@ -156,24 +146,26 @@ function restoreGame(id) {
 }
 
 var tok=0;
+// Добавили паузу, чтобы Steam не блокировал за частые запросы
+const delay = ms => new Promise(res => setTimeout(res, ms));
+
 async function load(){
   var my=++tok,cc=$("reg").value,start=0,total=1,map=new Map(),first=true;
   $("tb").innerHTML='<tr><td colspan="7"><div class="msg"><div class="sp"></div>Собираю скидки из Steam…</div></td></tr>';
   $("status").textContent="Загрузка…";data=null;
   try{
-    // Ограничиваем до 1500 игр (30 страниц), чтобы не ловить бан от Steam
-    while(start<total && start<1500){
+    // Увеличили лимит до 6000 игр
+    while(start<total && start<6000){
       var r=await fetch("/api/deals?cc="+cc+"&start="+start);
       var t=await r.text(),j;
       try{j=JSON.parse(t)}catch(x){ throw new Error("Ошибка сервера"); }
       
       if(my!==tok)return;
       
-      // Если Steam выдал ошибку (например 429 Too Many Requests), ловим ее
       if(!r.ok) { 
           console.warn("Steam API error:", j.error);
           $("status").textContent = "Live · Загружено "+map.size+" игр (Достигнут лимит Steam)";
-          break; // Прерываем цикл, но оставляем то, что уже загрузили
+          break; 
       }
       
       j.items.forEach(function(g){map.set(g.i,g)});
@@ -182,6 +174,10 @@ async function load(){
       
       $("status").textContent="Live · загружено "+Math.min(start,total)+" из "+total;
       if(first){first=false;apply()}
+      
+      // ПАУЗА 1.5 СЕКУНДЫ МЕЖДУ ЗАПРОСАМИ
+      if(start < total && start < 6000) await delay(1500); 
+      
       if(!start)break;
     }
     $("status").textContent="Live · "+map.size+" игр · обновлено в "+new Date().toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"});
@@ -227,7 +223,6 @@ function apply(){
 function more(){
   var end=Math.min(shown+PAGE,list.length),tb=$("tb");
   
-  // Удаляем старую плашку конца, если она есть
   var oldEnd = tb.querySelector('.end-row');
   if(oldEnd) oldEnd.remove();
 
@@ -261,8 +256,8 @@ function more(){
   shown=end;
   
   if (shown >= list.length) {
+    // Полностью скрываем кнопку, как ты просил
     $("more").hidden = true;
-    // Если список не пустой, показываем конец
     if (list.length > 0) {
         var endRow = document.createElement("tr");
         endRow.className = "end-row";
