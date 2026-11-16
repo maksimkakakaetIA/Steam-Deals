@@ -5,40 +5,45 @@ const dec = (s) =>
    .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&trade;|&reg;/g, "");
 
 function parse(page) {
-  // Разбиваем HTML на блоки для каждой игры
   const chunks = page.split('<a href="https://store.steampowered.com/app/').slice(1);
   const out = [];
   
   for (const b of chunks) {
-    // Извлекаем ID из начала ссылки
     const id = (b.match(/^(\d+)/) || [])[1];
-    
-    // Извлекаем название (оно всегда лежит в <span class="title">)
     const title = (b.match(/<span class="title">([^<]*)<\/span>/) || [])[1];
-    
-    // Извлекаем финальную цену в центах
     const fin = (b.match(/data-price-final="(\d+)"/) || [])[1];
-    
-    // Извлекаем скидку (проценты)
     const disc = +((b.match(/data-discount="-?(\d+)"/) || [])[1] || 0);
     
-    // Пропускаем игры без скидки или с некорректными данными
     if (!id || !title || !fin || !disc || disc >= 100) continue;
     
-    // Ищем рейтинг (проценты положительных отзывов)
+    // Вытаскиваем теги (жанры)
+    const tagsMatch = b.match(/top-tags">([\s\S]*?)<\/div>/);
+    const tags = tagsMatch ? Array.from(tagsMatch[1].matchAll(/<span class="top_tag">([^<]*)<\/span>/g)).map(m => dec(m[1].trim())) : [];
+    
+    // Вытаскиваем языки
+    const langsMatch = b.match(/data-lang="([^"]*)"/);
+    const langs = langsMatch ? langsMatch[1].split(",") : [];
+    const hasRussian = langs.includes("russian") || b.includes("Русский");
+
+    // Вытаскиваем время окончания скидки
+    const timerMatch = b.match(/data-discount-end="(\d+)"/);
+    const discountEnd = timerMatch ? +timerMatch[1] : 0;
+
     const tip = (b.match(/data-tooltip-html="([^"]*)"/) || [])[1] || "";
     const m = tip.match(/(\d+)%[^\d]*([\d\s,.\u00a0\u202f]+)/);
-    
-    const p = +fin / 100; // Цена в нормальном виде
+    const p = +fin / 100;
     
     out.push({
       i: +id,
       n: dec(title),
       d: disc,
       p,
-      o: +(p / (1 - disc / 100)).toFixed(2), // Старая цена
+      o: +(p / (1 - disc / 100)).toFixed(2),
       r: m ? +m[1] : 0,
       v: m ? +m[2].replace(/\D/g, "") : 0,
+      t: tags,
+      lang_ru: hasRussian,
+      end: discountEnd
     });
   }
   return { out, raw: chunks.length };
@@ -58,7 +63,7 @@ export async function onRequestGet({ request }) {
 
   const base =
     "https://store.steampowered.com/search/results/?query&start=" + start +
-    "&count=50&dynamic_data=&sort_by=_ASC&snr=1_7_7_2300_7&specials=1&category1=998&infinite=1&cc=" + cc;
+    "&count=50&dynamic_data=&sort_by=_ASC&specials=1&category1=998&infinite=1&cc=" + cc;
   const headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
     "Accept": "application/json, text/javascript, */*; q=0.01",
@@ -71,9 +76,9 @@ export async function onRequestGet({ request }) {
     try {
       const res = await fetch(base + "&l=" + lang, { headers });
       const txt = await res.text();
-      if (!txt.trim()) { last = "Steam вернул пустой ответ (HTTP " + res.status + ")"; continue; }
+      if (!txt.trim()) { last = "Steam вернул пустой ответ"; continue; }
       let j;
-      try { j = JSON.parse(txt); } catch (e) { last = "Steam вернул не JSON (HTTP " + res.status + "): " + txt.slice(0, 120); continue; }
+      try { j = JSON.parse(txt); } catch (e) { last = "Не JSON"; continue; }
       const { out, raw } = parse(j.results_html || "");
       return json({ cc, cur: CUR[cc], start, next: raw ? start + raw : 0, total: j.total_count || 0, items: out });
     } catch (e) {
