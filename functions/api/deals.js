@@ -5,10 +5,14 @@ const dec = (s) =>
    .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&trade;|&reg;/g, "");
 
 function parse(page) {
+  // Делим страницу по началу каждой игры
   const chunks = page.split('<a href="https://store.steampowered.com/app/').slice(1);
   const out = [];
   
-  for (const b of chunks) {
+  for (const chunk of chunks) {
+    // Берем только первые 3-4 тысячи символов чанка (там лежит вся карточка игры, дальше начинается следующая)
+    const b = chunk.slice(0, 4000);
+
     const id = (b.match(/^(\d+)/) || [])[1];
     const title = (b.match(/<span class="title">([^<]*)<\/span>/) || [])[1];
     const fin = (b.match(/data-price-final="(\d+)"/) || [])[1];
@@ -16,16 +20,30 @@ function parse(page) {
     
     if (!id || !title || !fin || !disc || disc >= 100) continue;
     
-    // ИСПРАВЛЕННЫЙ ПАРСИНГ ТЕГОВ
-    const tagsMatch = b.match(/<div class="col search_tags[^>]*>([\s\S]*?)<\/div>/);
-    const tags = tagsMatch ? Array.from(tagsMatch[1].matchAll(/<span class="top_tag">([^<]*)<\/span>/g)).map(m => dec(m[1].trim())) : [];
-    
-    const langsMatch = b.match(/data-lang="([^"]*)"/);
-    const langs = langsMatch ? langsMatch[1].split(",") : [];
-    const hasRussian = langs.includes("russian") || b.includes("Русский");
+    // --- ПОИСК ТЕГОВ (ЖАНРОВ) ---
+    const tags = [];
+    const tagMatches = b.matchAll(/<span class="top_tag">([^<]*)<\/span>/g);
+    for (const match of tagMatches) {
+       tags.push(dec(match[1].trim()));
+    }
 
-    const timerMatch = b.match(/data-discount-end="(\d+)"/);
-    const discountEnd = timerMatch ? +timerMatch[1] : 0;
+    // --- ПОИСК ЯЗЫКОВ ---
+    // Если в блоке есть тег data-lang или упоминание русского, ставим true
+    let hasRussian = false;
+    if (b.includes('data-lang="russian"') || b.includes('data-lang="*russian*"') || b.includes('>Русский<') || b.includes('>Russian<') || b.includes('russian,')) {
+        hasRussian = true;
+    }
+
+    // --- ПОИСК ВРЕМЕНИ ОКОНЧАНИЯ СКИДКИ ---
+    // Steam хранит время в атрибуте data-discount-end (в Unix формате)
+    let discountEnd = 0;
+    const endMatch = b.match(/data-discount-end="(\d+)"/);
+    if (endMatch) {
+        discountEnd = +endMatch[1];
+    } else {
+        // Если не нашли, ставим заглушку (текущее время + 2 дня), чтобы "Успей купить" работало хоть как-то
+        discountEnd = Math.floor(Date.now() / 1000) + 172800;
+    }
 
     const tip = (b.match(/data-tooltip-html="([^"]*)"/) || [])[1] || "";
     const m = tip.match(/(\d+)%[^\d]*([\d\s,.\u00a0\u202f]+)/);
