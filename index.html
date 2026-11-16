@@ -27,6 +27,8 @@ button{cursor:pointer}button:hover,select:hover{transform:translateY(-2px);borde
 .btn-rec.active{background:linear-gradient(90deg,#e74c3c,#e67e22);color:#fff;}
 .btn-hidden{background:var(--surface);border:1px solid var(--border);}
 .btn-hidden.active{background:var(--danger);border-color:var(--danger);color:#fff;}
+.btn-reset{background:transparent;border:1px solid var(--muted);color:var(--muted);font-size:13px;padding:6px 12px;}
+.btn-reset:hover{border-color:var(--text);color:var(--text);}
 .count{text-align:center;color:var(--muted);font-size:13px;margin-bottom:12px}
 .tw{overflow-x:auto;border:1px solid var(--border);border-radius:16px;background:var(--surface)}
 table{width:100%;border-collapse:collapse;min-width:800px}
@@ -88,6 +90,7 @@ s{color:var(--muted)}
 <button id="refresh">↻ Обновить</button>
 <button id="btnRec" class="btn-rec">🔥 Рекомендации</button>
 <button id="btnShowHidden" class="btn-hidden">🗑 Скрытые</button>
+<button id="btnReset" class="btn-reset">Сброс</button>
 </div>
 <div class="count" id="count"></div>
 <div class="tw"><table>
@@ -100,13 +103,33 @@ s{color:var(--muted)}
 
 <script>
 var $=function(i){return document.getElementById(i)},data=null,sk="d",dir=-1,shown=0,PAGE=60,list=[];
-var isRecMode = false;
-var showHiddenOnly = false;
+
+// Загрузка сохраненных настроек
+var isRecMode = localStorage.getItem('steam_rec') === "true";
+var showHiddenOnly = localStorage.getItem('steam_show_hidden') === "true";
 var hiddenGames = new Set(JSON.parse(localStorage.getItem('steam_hidden') || "[]"));
+
+// Восстановление фильтров
+var savedFilters = JSON.parse(localStorage.getItem('steam_filters') || "{}");
+if(savedFilters.reg) $("reg").value = savedFilters.reg;
+if(savedFilters.q) $("q").value = savedFilters.q;
+if(savedFilters.md) $("md").value = savedFilters.md;
+if(savedFilters.mr) $("mr").value = savedFilters.mr;
+if(savedFilters.mv) $("mv").value = savedFilters.mv;
+if(savedFilters.mp) $("mp").value = savedFilters.mp;
+
+// Восстановление вида кнопок при загрузке
+if(isRecMode) { $("btnRec").classList.add('active'); $("btnRec").textContent = "⏹ Стоп рекомендации"; }
+if(showHiddenOnly) { $("btnShowHidden").classList.add('active'); }
 
 var io=new IntersectionObserver(function(es){es.forEach(function(x){if(x.isIntersecting){var r=x.target;r.classList.add("in");var b=r.querySelector(".rb i");if(b)b.style.width=b.dataset.w+"%";io.unobserve(r)}})},{threshold:.05});
 function money(v){try{return new Intl.NumberFormat("ru-RU",{style:"currency",currency:data.cur,maximumFractionDigits:v%1?2:0}).format(v)}catch(e){return v.toFixed(2)}}
 function esc(s){return s.replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+
+function saveFilters() {
+  var f = { reg: $("reg").value, q: $("q").value, md: $("md").value, mr: $("mr").value, mv: $("mv").value, mp: $("mp").value };
+  localStorage.setItem('steam_filters', JSON.stringify(f));
+}
 
 function showToast(id, name) {
   var container = $("toast-container");
@@ -146,7 +169,6 @@ function restoreGame(id) {
 }
 
 var tok=0;
-// Добавили паузу, чтобы Steam не блокировал за частые запросы
 const delay = ms => new Promise(res => setTimeout(res, ms));
 
 async function load(){
@@ -154,7 +176,6 @@ async function load(){
   $("tb").innerHTML='<tr><td colspan="7"><div class="msg"><div class="sp"></div>Собираю скидки из Steam…</div></td></tr>';
   $("status").textContent="Загрузка…";data=null;
   try{
-    // Увеличили лимит до 6000 игр
     while(start<total && start<6000){
       var r=await fetch("/api/deals?cc="+cc+"&start="+start);
       var t=await r.text(),j;
@@ -175,7 +196,6 @@ async function load(){
       $("status").textContent="Live · загружено "+Math.min(start,total)+" из "+total;
       if(first){first=false;apply()}
       
-      // ПАУЗА 1.5 СЕКУНДЫ МЕЖДУ ЗАПРОСАМИ
       if(start < total && start < 6000) await delay(1500); 
       
       if(!start)break;
@@ -190,6 +210,8 @@ async function load(){
 
 function apply(){
   if(!data)return;
+  saveFilters(); // Сохраняем фильтры при каждом изменении
+  
   var q=$("q").value.trim().toLowerCase(),md=+$("md").value,mr=+$("mr").value,mv=+$("mv").value,mp=parseFloat($("mp").value);
   
   if (showHiddenOnly) {
@@ -256,8 +278,7 @@ function more(){
   shown=end;
   
   if (shown >= list.length) {
-    // Полностью скрываем кнопку, как ты просил
-    $("more").hidden = true;
+    $("more").style.display = "none"; // Полностью скрываем кнопку, как ты просил
     if (list.length > 0) {
         var endRow = document.createElement("tr");
         endRow.className = "end-row";
@@ -265,12 +286,12 @@ function more(){
         tb.appendChild(endRow);
     }
   } else {
-    $("more").hidden = false;
+    $("more").style.display = "block";
   }
 }
 
 [].forEach.call(document.querySelectorAll("th"),function(t){t.onclick=function(){if(!t.dataset.k)return;var k=t.dataset.k;if(sk===k)dir=-dir;else{sk=k;dir=k==="n"||k==="p"||k==="o"?1:-1}
-  if(isRecMode) { isRecMode = false; $("btnRec").classList.remove('active'); $("btnRec").textContent = "🔥 Рекомендации"; }
+  if(isRecMode) { isRecMode = false; localStorage.setItem('steam_rec', "false"); $("btnRec").classList.remove('active'); $("btnRec").textContent = "🔥 Рекомендации"; }
   apply()
 }});
 
@@ -282,6 +303,8 @@ $("refresh").onclick=load;
 $("btnRec").onclick=function(){
   isRecMode = !isRecMode;
   showHiddenOnly = false;
+  localStorage.setItem('steam_rec', isRecMode);
+  localStorage.setItem('steam_show_hidden', false);
   $("btnShowHidden").classList.remove('active');
   this.classList.toggle('active', isRecMode);
   this.textContent = isRecMode ? "⏹ Стоп рекомендации" : "🔥 Рекомендации";
@@ -291,14 +314,36 @@ $("btnRec").onclick=function(){
 $("btnShowHidden").onclick=function(){
   showHiddenOnly = !showHiddenOnly;
   isRecMode = false;
+  localStorage.setItem('steam_show_hidden', showHiddenOnly);
+  localStorage.setItem('steam_rec', false);
   $("btnRec").classList.remove('active');
   $("btnRec").textContent = "🔥 Рекомендации";
   this.classList.toggle('active', showHiddenOnly);
   apply();
 };
 
-try{var sv=localStorage.getItem("reg");if(sv)$("reg").value=sv}catch(e){}
-$("reg").onchange=function(){try{localStorage.setItem("reg",$("reg").value)}catch(e){}load()};
+$("btnReset").onclick=function(){
+  $("q").value = "";
+  $("md").value = "0";
+  $("mr").value = "0";
+  $("mv").value = "100";
+  $("mp").value = "";
+  isRecMode = false;
+  showHiddenOnly = false;
+  localStorage.setItem('steam_rec', false);
+  localStorage.setItem('steam_show_hidden', false);
+  $("btnRec").classList.remove('active');
+  $("btnRec").textContent = "🔥 Рекомендации";
+  $("btnShowHidden").classList.remove('active');
+  apply();
+};
+
+$("reg").onchange=function(){saveFilters();load()};
+
+// При запуске: если в сохраненках стоит рекомендация или скрытые, включаем их вид
+if(isRecMode) { $("btnRec").classList.add('active'); $("btnRec").textContent = "⏹ Стоп рекомендации"; }
+if(showHiddenOnly) { $("btnShowHidden").classList.add('active'); }
+
 load();setInterval(load,15*60*1000);
 </script>
 </body>
