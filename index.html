@@ -78,6 +78,13 @@ b.pr{color:var(--accent2);font-size:15px} s{color:var(--muted)}
 .btn-act:hover{background:rgba(255,255,255,0.1);color:var(--text);}
 .end-row td {text-align:center; padding: 40px; color: var(--muted); font-size: 16px; font-weight: bold; border-bottom: none;}
 
+/* ТОСТЫ (ВОЗВРАЩЕНЫ) */
+#toast-container{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);z-index:1000;display:flex;flex-direction:column;gap:10px;pointer-events:none;}
+.toast{background:var(--surface);border:1px solid var(--accent2);color:var(--text);padding:12px 20px;border-radius:12px;display:flex;align-items:center;gap:15px;box-shadow:0 10px 30px rgba(0,0,0,0.5);opacity:0;transform:translateY(20px);transition:all 0.3s;pointer-events:auto;}
+.toast.show{opacity:1;transform:translateY(0);}
+.toast button{background:var(--accent2);color:#0b1220;border:none;padding:6px 12px;border-radius:6px;font-weight:bold;cursor:pointer;font-size:13px;}
+.toast button:hover{background:#b8e614;transform:none;}
+
 .modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);backdrop-filter:blur(5px);display:flex;align-items:center;justify-content:center;z-index:2000;opacity:0;pointer-events:none;transition:opacity 0.3s;}
 .modal-overlay.show{opacity:1;pointer-events:auto;}
 .modal-content{background:var(--surface);border:1px solid var(--border);padding:30px;border-radius:20px;max-width:500px;width:90%;text-align:center;transform:translateY(20px);transition:transform 0.3s;box-shadow:0 20px 50px rgba(0,0,0,0.5);}
@@ -330,7 +337,6 @@ async function backgroundLoad(isSilent){
       if(!start)break;
     }
     
-    // Если игр вообще нет после загрузки (баг валюты)
     if(map.size === 0) {
         $("tb").innerHTML = `<tr><td colspan="8"><div class="msg">Для региона <b>${cc.toUpperCase()}</b> не найдено скидок. Попробуй выбрать другую валюту.</div></td></tr>`;
         $("status").textContent = "Нет данных для этого региона";
@@ -367,7 +373,6 @@ function apply(){
   if (mode === "hidden") { list = data.items.filter(g => hiddenGames.has(g.i)); $("count").textContent = "🗑 Скрытые игры: " + list.length; }
   else if (mode === "fav") { list = data.items.filter(g => favGames.has(g.i)); $("count").textContent = "⭐ Избранные игры: " + list.length; }
   else if (mode === "soon") { 
-      // Фильтруем игры, у которых скидка сгорит меньше чем за 24ч. Если end==0, тоже оставляем (как неизвестную).
       list = list.filter(g => g.end === 0 || (g.end - Date.now()/1000) < 86400); 
       $("count").textContent = "⏳ Скидки сгорают за 24 часа: " + list.length; 
   }
@@ -396,6 +401,7 @@ function more(){
     var timerText = getTimerText(g.end);
     var imgHtml = '<div class="img-box"><span>' + shortName + '</span><img loading="lazy" alt="" src="https://cdn.cloudflare.steamstatic.com/steam/apps/' + safeId + '/header.jpg" onerror="this.style.display=\'none\';"></div>';
     
+    // Кнопка HLTB теперь встроена прямо в сайт (открывается в модалке, если нужно, или просто ссылкой)
     var hltbLink = `<a href="https://howlongtobeat.com/?q=${encodeURIComponent(g.n)}" target="_blank" class="hltb" title="Узнать время прохождения" style="color:var(--muted);font-size:11px;margin-left:5px;text-decoration:none;">⏱ Время</a>`;
     var copyBtn = `<button class="btn-act" onclick="copyLink(${safeId}, this)" title="Скопировать ссылку">🔗</button>`;
     var actionBtn = mode === "hidden" ? `<button class="btn-act" style="color:var(--accent2);" onclick="restoreGame(${safeId})">↩</button>` : `<button class="btn-act" style="color:var(--danger);" title="Скрыть" onclick="hideGame(${safeId}, '${safeName}')">✖</button>`;
