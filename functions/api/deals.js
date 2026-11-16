@@ -16,7 +16,8 @@ function parse(page) {
     
     if (!id || !title || !fin || !disc || disc >= 100) continue;
     
-    const tagsMatch = b.match(/top-tags">([\s\S]*?)<\/div>/);
+    // ИСПРАВЛЕННЫЙ ПАРСИНГ ТЕГОВ
+    const tagsMatch = b.match(/<div class="col search_tags[^>]*>([\s\S]*?)<\/div>/);
     const tags = tagsMatch ? Array.from(tagsMatch[1].matchAll(/<span class="top_tag">([^<]*)<\/span>/g)).map(m => dec(m[1].trim())) : [];
     
     const langsMatch = b.match(/data-lang="([^"]*)"/);
@@ -52,7 +53,6 @@ const json = (obj, status = 200) =>
     headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "public, max-age=300" },
   });
 
-// 1. Функция получения скидок
 export async function onRequestGet({ request }) {
   const u = new URL(request.url);
   const cc = (u.searchParams.get("cc") || "us").toLowerCase();
@@ -86,12 +86,10 @@ export async function onRequestGet({ request }) {
   return json({ error: last }, 502);
 }
 
-// 2. НОВАЯ ФУНКЦИЯ ДЛЯ ОНЛАЙНА ИГР
 export async function onRequestPost({ request }) {
   try {
     const { appid } = await request.json();
     if (!appid) return json({ error: "no appid" }, 400);
-    
     const res = await fetch(`https://api.steampowered.com/ISteamUserStats/GetNumberOfCurrentPlayers/v1/?appid=${appid}`);
     const data = await res.json();
     return json(data);
