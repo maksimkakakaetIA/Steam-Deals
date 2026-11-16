@@ -27,7 +27,7 @@ h1{text-align:center;font-size:clamp(28px,6vw,48px);margin:10px 0 6px;background
 #siteOnline{display:inline-block;transition:transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.3s;}
 #siteOnline.update-anim{transform:translateY(-4px) scale(1.1);color:var(--accent2);}
 
-/* Красивые блоки фильтров */
+/* Панель */
 .panel-container{display:flex;flex-direction:column;gap:12px;margin-bottom:20px;background:rgba(20,29,49,0.4);padding:15px;border-radius:16px;border:1px solid var(--border);}
 [data-theme="light"] .panel-container{background:#fff;box-shadow:0 4px 15px rgba(0,0,0,0.05);}
 .panel-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;align-items:center;}
@@ -101,7 +101,6 @@ b.pr{color:var(--accent2);font-size:15px} s{color:var(--muted)}
   <div class="badge">👀 На сайте: <b id="siteOnline" style="color:var(--accent);">0</b></div>
 </div>
 
-<!-- Удобная панель фильтров -->
 <div class="panel-container">
   <div class="panel-row">
     <select id="reg">
@@ -116,7 +115,6 @@ b.pr{color:var(--accent2);font-size:15px} s{color:var(--muted)}
     <div class="divider"></div>
     <label><input type="checkbox" id="ruFilter"> 🇷🇺 Русский</label>
     <label><input type="checkbox" id="baseGameFilter"> Только игры</label>
-    <label><input type="checkbox" id="deckFilter"> 🎮 Deck Verified</label>
   </div>
   
   <div class="panel-row" style="margin-top:10px;">
@@ -148,7 +146,6 @@ b.pr{color:var(--accent2);font-size:15px} s{color:var(--muted)}
 <button class="more" id="more" hidden>Показать ещё</button>
 </main>
 
-<!-- Модалка для рулетки и картинок -->
 <div class="modal-overlay" id="modal">
   <div class="modal-content">
     <img id="modalImg" class="modal-img" src="" alt="">
@@ -166,7 +163,9 @@ b.pr{color:var(--accent2);font-size:15px} s{color:var(--muted)}
 let lastOnline = 0;
 async function updateSiteCounter() {
   try {
-    const r = await fetch("/api/online");
+    let uid = localStorage.getItem('steam_uid');
+    if (!uid) { uid = Math.random().toString(36).substring(7); localStorage.setItem('steam_uid', uid); }
+    const r = await fetch("/api/online?uid=" + uid);
     const data = await r.json();
     const el = document.getElementById('siteOnline');
     if (data.online !== undefined && data.online !== lastOnline) {
@@ -177,7 +176,7 @@ async function updateSiteCounter() {
 }
 updateSiteCounter(); setInterval(updateSiteCounter, 15000);
 
-// --- ТЕМЫ (С ночным режимом) ---
+// --- ТЕМЫ ---
 const root = document.documentElement, themeToggle = document.getElementById('themeToggle');
 let currentTheme = localStorage.getItem('steam_theme') || 'system';
 function applyTheme(theme) {
@@ -202,14 +201,13 @@ function openModal(game) {
 }
 function closeModal() { document.getElementById('modal').classList.remove('show'); }
 
-// --- ОСНОВНАЯ ЛОГИКА ---
+// --- ЛОГИКА ---
 var $=function(i){return document.getElementById(i)},data=null,sk="d",dir=-1,shown=0,PAGE=60,list=[];
-var isRecMode = false, showHiddenOnly = false, showFavOnly = false, isSoonMode = false, isProfitMode = false;
+var mode = "default"; // Режим: default, rec, fav, hidden, soon, profit
 
 var hiddenGames = new Set(JSON.parse(localStorage.getItem('steam_hidden') || "[]"));
 var favGames = new Set(JSON.parse(localStorage.getItem('steam_fav') || "[]"));
 
-// Восстановление фильтров
 var savedFilters = JSON.parse(localStorage.getItem('steam_filters') || "{}");
 if(savedFilters.reg) $("reg").value = savedFilters.reg;
 if(savedFilters.q) $("q").value = savedFilters.q;
@@ -217,12 +215,11 @@ if(savedFilters.md) $("md").value = savedFilters.md;
 if(savedFilters.mp) $("mp").value = savedFilters.mp;
 if(savedFilters.ruFilter) $("ruFilter").checked = true;
 if(savedFilters.baseGameFilter) $("baseGameFilter").checked = true;
-if(savedFilters.deckFilter) $("deckFilter").checked = true;
 
 var io=new IntersectionObserver(function(es){es.forEach(function(x){if(x.isIntersecting){var r=x.target;r.classList.add("in");var b=r.querySelector(".rb i");if(b)b.style.width=b.dataset.w+"%";io.unobserve(r)}})},{threshold:.05});
 function money(v){try{return new Intl.NumberFormat("ru-RU",{style:"currency",currency:data.cur,maximumFractionDigits:v%1?2:0}).format(v)}catch(e){return v.toFixed(2)}}
 function esc(s){return s.replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
-function saveFilters() { localStorage.setItem('steam_filters', JSON.stringify({ reg: $("reg").value, q: $("q").value, md: $("md").value, mp: $("mp").value, ruFilter: $("ruFilter").checked, baseGameFilter: $("baseGameFilter").checked, deckFilter: $("deckFilter").checked })); }
+function saveFilters() { localStorage.setItem('steam_filters', JSON.stringify({ reg: $("reg").value, q: $("q").value, md: $("md").value, mp: $("mp").value, ruFilter: $("ruFilter").checked, baseGameFilter: $("baseGameFilter").checked })); }
 
 function getTimerText(endUnix) {
   if (!endUnix) return "";
@@ -292,7 +289,6 @@ async function backgroundLoad(isSilent){
       if(my!==tok)return; if(!r.ok) break;
       
       j.items.forEach(function(g){ 
-          // Защита от 0 рублей (если Steam не отдал цену, пропускаем)
           if(g.p > 0) { map.set(g.i,g); if(g.t) g.t.forEach(tag => allTags.add(tag)); }
       });
       
@@ -317,31 +313,47 @@ function fillTags(tagSet) {
   sel.value = currVal; 
 }
 
+// Главная функция фильтрации и отрисовки
 function apply(){
   if(!data)return; saveFilters();
-  var q=$("q").value.trim().toLowerCase(),md=+$("md").value,mp=parseFloat($("mp").value),ru=$("ruFilter").checked,tag=$("tagFilter").value, baseOnly=$("baseGameFilter").checked, deck=$("deckFilter").checked;
+  var q=$("q").value.trim().toLowerCase(),md=+$("md").value,mp=parseFloat($("mp").value),ru=$("ruFilter").checked,tag=$("tagFilter").value, baseOnly=$("baseGameFilter").checked;
   
-  if (showHiddenOnly) {
-    list = data.items.filter(g => hiddenGames.has(g.i)); $("count").textContent = "🗑 Скрытые игры: " + list.length;
-  } else if (showFavOnly) {
-    list = data.items.filter(g => favGames.has(g.i)); $("count").textContent = "⭐ Избранные игры: " + list.length;
-  } else {
-    list = data.items.filter(function(g){
+  // Базовый фильтр (поиск, цена, язык)
+  list = data.items.filter(function(g){
       let matchTag = (tag === "all") || (g.t && g.t.includes(tag));
       let matchRu = !ru || g.lang_ru;
       let matchBase = !baseOnly || (!g.n.toLowerCase().includes("soundtrack") && !g.n.toLowerCase().includes("dlc") && !g.n.toLowerCase().includes("artbook"));
-      let matchDeck = !deck || g.deck; // если в deals.js будет передаваться g.deck
-      return !hiddenGames.has(g.i) && g.d>=md && (isNaN(mp)||g.p<=mp) && (!q||g.n.toLowerCase().indexOf(q)>-1) && matchRu && matchTag && matchBase && matchDeck;
-    });
+      return !hiddenGames.has(g.i) && g.d>=md && (isNaN(mp)||g.p<=mp) && (!q||g.n.toLowerCase().indexOf(q)>-1) && matchRu && matchTag && matchBase;
+  });
 
-    if (isSoonMode) { list = list.filter(g => g.end && (g.end - Date.now()/1000) < 86400); $("count").textContent = "⏳ Скидки сгорают за 24 часа: " + list.length; }
-    else if (isProfitMode) { list.sort((a,b) => (b.d/b.p) - (a.d/a.p)); $("count").textContent = "💎 Сортировка по выгоде"; }
-    else if (isRecMode) { list.sort((a, b) => (b.d * b.r) - (a.d * a.r)); list = list.slice(0, 15); $("count").textContent = "🔥 Рекомендации (Топ-15)"; }
-    else {
+  // Применяем режимы
+  if (mode === "hidden") {
+      list = data.items.filter(g => hiddenGames.has(g.i));
+      $("count").textContent = "🗑 Скрытые игры: " + list.length;
+  } else if (mode === "fav") {
+      list = data.items.filter(g => favGames.has(g.i));
+      $("count").textContent = "⭐ Избранные игры: " + list.length;
+  } else if (mode === "soon") {
+      list = list.filter(g => g.end && (g.end - Date.now()/1000) < 86400);
+      $("count").textContent = "⏳ Скидки сгорают за 24 часа: " + list.length;
+  } else if (mode === "profit") {
+      list.sort((a,b) => (b.d/b.p) - (a.d/a.p));
+      $("count").textContent = "💎 Сортировка по выгоде";
+  } else if (mode === "rec") {
+      list.sort((a, b) => (b.d * b.r) - (a.d * a.r)); list = list.slice(0, 15);
+      $("count").textContent = "🔥 Рекомендации (Топ-15)";
+  } else {
       list.sort(function(a,b){ var x=a[sk],y=b[sk]; if(sk==="n") return dir*x.localeCompare(y); return x===y?b.v-a.v:dir*(x-y) });
       $("count").textContent="Найдено "+list.length+" игр";
-    }
   }
+
+  // Обновляем кнопки
+  $("btnSoon").classList.toggle('active', mode==="soon");
+  $("btnProfit").classList.toggle('active', mode==="profit");
+  $("btnRec").classList.toggle('active', mode==="rec");
+  $("btnRec").textContent = mode==="rec" ? "⏹ Стоп" : "🔥 Рекомендации";
+  $("btnFav").classList.toggle('active', mode==="fav");
+  $("btnShowHidden").classList.toggle('active', mode==="hidden");
 
   [].forEach.call(document.querySelectorAll("th"),function(t){if(t.dataset.k) t.classList.toggle("on",t.dataset.k===sk)});
   $("tb").innerHTML="";shown=0;more();
@@ -362,7 +374,7 @@ function more(){
     
     var hltbLink = `<a href="https://howlongtobeat.com/?q=${encodeURIComponent(g.n)}" target="_blank" class="hltb" title="Узнать время прохождения" style="color:var(--muted);font-size:11px;margin-left:5px;text-decoration:none;">⏱ Время</a>`;
     var copyBtn = `<button class="btn-act" onclick="copyLink(${safeId}, this)" title="Скопировать ссылку">🔗</button>`;
-    var actionBtn = showHiddenOnly ? `<button class="btn-act" style="color:var(--accent2);" onclick="restoreGame(${safeId})">↩</button>` : `<button class="btn-act" style="color:var(--danger);" title="Скрыть" onclick="hideGame(${safeId}, '${safeName}')">✖</button>`;
+    var actionBtn = mode === "hidden" ? `<button class="btn-act" style="color:var(--accent2);" onclick="restoreGame(${safeId})">↩</button>` : `<button class="btn-act" style="color:var(--danger);" title="Скрыть" onclick="hideGame(${safeId}, '${safeName}')">✖</button>`;
 
     tr.innerHTML = `
     <td style="text-align:center;"><button class="btn-act" style="color:${isFav?'var(--gold)':'var(--muted)'};font-size:20px;" onclick="toggleFav(${safeId})">${favStar}</button></td>
@@ -383,31 +395,23 @@ function more(){
 }
 
 [].forEach.call(document.querySelectorAll("th"),function(t){t.onclick=function(){if(!t.dataset.k)return;var k=t.dataset.k;if(sk===k)dir=-dir;else{sk=k;dir=k==="n"||k==="p"||k==="o"?1:-1}
-  if(isRecMode) { isRecMode = false; $("btnRec").classList.remove('active'); $("btnRec").textContent = "🔥 Рекомендации"; }
-  apply()
+  mode = "default"; apply();
 }});
 
-["q","md","mp","ruFilter","tagFilter","baseGameFilter","deckFilter"].forEach(function(i){$(i).oninput=apply; $(i).onchange=apply;});
+["q","md","mp","ruFilter","tagFilter","baseGameFilter"].forEach(function(i){$(i).oninput=apply; $(i).onchange=apply;});
 $("more").onclick=more; $("refresh").onclick=function(){ localStorage.removeItem('steam_cache_data'); load(); };
 
-function resetModes() {
-  isRecMode = false; showHiddenOnly = false; showFavOnly = false; isSoonMode = false; isProfitMode = false;
-  $("btnRec").classList.remove('active'); $("btnRec").textContent = "🔥 Рекомендации";
-  $("btnFav").classList.remove('active'); $("btnShowHidden").classList.remove('active');
-  $("btnSoon").classList.remove('active'); $("btnProfit").classList.remove('active');
-}
-
-$("btnRec").onclick=function(){ resetModes(); isRecMode = true; this.classList.add('active'); this.textContent = "⏹ Стоп"; apply(); };
-$("btnFav").onclick=function(){ resetModes(); showFavOnly = true; this.classList.add('active'); apply(); };
-$("btnShowHidden").onclick=function(){ resetModes(); showHiddenOnly = true; this.classList.add('active'); apply(); };
-$("btnSoon").onclick=function(){ resetModes(); isSoonMode = true; this.classList.add('active'); apply(); };
-$("btnProfit").onclick=function(){ resetModes(); isProfitMode = true; this.classList.add('active'); apply(); };
+$("btnSoon").onclick=function(){ mode = mode === "soon" ? "default" : "soon"; apply(); };
+$("btnProfit").onclick=function(){ mode = mode === "profit" ? "default" : "profit"; apply(); };
+$("btnRec").onclick=function(){ mode = mode === "rec" ? "default" : "rec"; apply(); };
+$("btnFav").onclick=function(){ mode = mode === "fav" ? "default" : "fav"; apply(); };
+$("btnShowHidden").onclick=function(){ mode = mode === "hidden" ? "default" : "hidden"; apply(); };
 
 $("btnRandom").onclick=function(){ if(list.length > 0) { const r = list[Math.floor(Math.random() * list.length)]; openModal(r); } else { showToast("Список пуст", "OK", ()=>{}); } };
 
 $("btnReset").onclick=function(){ 
-  $("q").value=""; $("md").value="0"; $("mp").value=""; $("ruFilter").checked=false; $("tagFilter").value="all"; $("baseGameFilter").checked=false; $("deckFilter").checked=false;
-  resetModes(); apply(); 
+  $("q").value=""; $("md").value="0"; $("mp").value=""; $("ruFilter").checked=false; $("tagFilter").value="all"; $("baseGameFilter").checked=false;
+  mode = "default"; apply(); 
 };
 
 $("reg").onchange=function(){saveFilters(); localStorage.removeItem('steam_cache_data'); load()};
