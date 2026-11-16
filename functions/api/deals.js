@@ -1,4 +1,3 @@
-
 const CUR = { ru: "RUB", ua: "UAH", kz: "KZT", us: "USD", de: "EUR", gb: "GBP", pl: "PLN", tr: "TRY" };
 
 const dec = (s) =>
@@ -6,23 +5,38 @@ const dec = (s) =>
    .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&trade;|&reg;/g, "");
 
 function parse(page) {
-  const chunks = page.split("search_result_row").slice(1);
+  // Разбиваем HTML на блоки для каждой игры
+  const chunks = page.split('<a href="https://store.steampowered.com/app/').slice(1);
   const out = [];
+  
   for (const b of chunks) {
-    const id = (b.match(/data-ds-appid="(\d+)"/) || [])[1];
-    const title = (b.match(/<span class="title">([^<]*)</) || [])[1];
+    // Извлекаем ID из начала ссылки
+    const id = (b.match(/^(\d+)/) || [])[1];
+    
+    // Извлекаем название (оно всегда лежит в <span class="title">)
+    const title = (b.match(/<span class="title">([^<]*)<\/span>/) || [])[1];
+    
+    // Извлекаем финальную цену в центах
     const fin = (b.match(/data-price-final="(\d+)"/) || [])[1];
+    
+    // Извлекаем скидку (проценты)
     const disc = +((b.match(/data-discount="-?(\d+)"/) || [])[1] || 0);
+    
+    // Пропускаем игры без скидки или с некорректными данными
     if (!id || !title || !fin || !disc || disc >= 100) continue;
+    
+    // Ищем рейтинг (проценты положительных отзывов)
     const tip = (b.match(/data-tooltip-html="([^"]*)"/) || [])[1] || "";
     const m = tip.match(/(\d+)%[^\d]*([\d\s,.\u00a0\u202f]+)/);
-    const p = +fin / 100;
+    
+    const p = +fin / 100; // Цена в нормальном виде
+    
     out.push({
       i: +id,
       n: dec(title),
       d: disc,
       p,
-      o: +(p / (1 - disc / 100)).toFixed(2),
+      o: +(p / (1 - disc / 100)).toFixed(2), // Старая цена
       r: m ? +m[1] : 0,
       v: m ? +m[2].replace(/\D/g, "") : 0,
     });
