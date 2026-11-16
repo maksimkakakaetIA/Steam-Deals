@@ -3,9 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Steam Скидки — как SteamDB</title>
+<title>Steam Скидки — PRO</title>
 <style>
-/* Стили (все те же, плюс немного для новых кнопок) */
 :root{--bg:#0b1220;--surface:#141d31;--text:#e8eefc;--muted:#8fa0c4;--accent:#66c0f4;--accent2:#a4d007;--border:#243251;--danger:#e74c3c;--gold:#f1c40f;}
 [data-theme="light"]{--bg:#eef3fb;--surface:#fff;--text:#13203a;--muted:#5a6b8c;--accent:#1b7fc4;--accent2:#5c7a00;--border:#d3ddef;--danger:#d32f2f;--gold:#d4ac0d;}
 *{box-sizing:border-box}
@@ -15,19 +14,18 @@ body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-appl
 @keyframes float{to{transform:translate(8vmax,6vmax) scale(1.15)}}
 .top-bar{position:absolute;top:20px;right:20px;display:flex;gap:10px;z-index:100;}
 .theme-btn{background:var(--surface);border:1px solid var(--border);border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;box-shadow:0 4px 10px rgba(0,0,0,0.1);}
-.theme-btn:hover{transform:scale(1.1);border-color:var(--accent);}
 main{position:relative;max-width:1350px;margin:0 auto;padding:28px 14px 60px}
 h1{text-align:center;font-size:clamp(28px,6vw,48px);margin:10px 0 6px;background:linear-gradient(90deg,var(--accent),#c7a6ff,var(--accent2),var(--accent));background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shine 8s linear infinite}
 @keyframes shine{to{background-position:300% 0}}
-.live{display:flex;justify-content:center;align-items:center;gap:8px;color:var(--muted);font-size:14px;margin-bottom:18px}
+.live{display:flex;justify-content:center;align-items:center;gap:15px;color:var(--muted);font-size:14px;margin-bottom:18px}
+.badge{background:var(--surface);border:1px solid var(--border);padding:4px 10px;border-radius:20px;font-size:13px;display:flex;align-items:center;gap:6px;}
 .dot{width:10px;height:10px;border-radius:50%;background:var(--accent2);animation:pulse 1.6s infinite}
 @keyframes pulse{0%{box-shadow:0 0 0 0 var(--accent2)}100%{box-shadow:0 0 0 12px transparent}}
 .controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:16px;align-items:center;}
 select,input,button{font:inherit;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:999px;padding:8px 14px;transition:transform .2s,border-color .2s;outline:none;}
 input{width:150px}input[type=search]{width:200px}
 button{cursor:pointer}button:hover,select:hover{transform:translateY(-2px);border-color:var(--accent)}
-.btn-rec{background:linear-gradient(90deg,#a4d007,#66c0f4);color:#0b1220;font-weight:bold;border:none;}
-.btn-rec.active{background:linear-gradient(90deg,#e74c3c,#e67e22);color:#fff;}
+.btn-rec.active{background:linear-gradient(90deg,#e74c3c,#e67e22);color:#fff;border:none;}
 .btn-hidden.active{background:var(--danger);border-color:var(--danger);color:#fff;}
 .btn-fav.active{background:var(--gold);color:#0b1220;border-color:var(--gold);}
 .btn-reset{background:transparent;border:1px solid var(--muted);color:var(--muted);font-size:13px;padding:6px 12px;}
@@ -64,26 +62,25 @@ b.pr{color:var(--accent2);font-size:15px} s{color:var(--muted)}
 </style>
 </head>
 <body>
-<div class="top-bar">
-  <button class="theme-btn" id="themeToggle">🌓</button>
-</div>
+<div class="top-bar"><button class="theme-btn" id="themeToggle">🌓</button></div>
 <div class="blob b1"></div><div class="blob b2"></div>
 <main>
 <h1>Steam Скидки PRO</h1>
-<div class="live"><span class="dot"></span><span id="status">Загрузка…</span></div>
+
+<div class="live">
+  <div class="badge"><span class="dot"></span><span id="status">Загрузка…</span></div>
+  <div class="badge">👀 На сайте: <b id="siteOnline" style="color:var(--accent);">...</b></div>
+</div>
 
 <div class="controls">
 <select id="reg"><option value="ru">🇷🇺 RUB</option><option value="us">🇺🇸 USD</option><option value="de">🇪🇺 EUR</option></select>
 <input id="q" type="search" placeholder="Поиск игры…">
-<!-- Фильтр по тегам (заполняется автоматом при загрузке) -->
 <select id="tagFilter"><option value="all">Все жанры</option></select>
 <select id="md"><option value="0">Скидка от 0%</option><option value="50">От 50%</option><option value="75">От 75%</option></select>
 <input id="mp" type="number" min="0" placeholder="Цена до…">
-
 <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:14px;">
   <input type="checkbox" id="ruFilter" style="width:auto;border-radius:4px;"> 🇷🇺 Русский
 </label>
-
 <button id="refresh">↻ Обновить</button>
 <button id="btnRec" class="btn-rec">🔥 Рекомендации</button>
 <button id="btnFav" class="btn-fav">⭐ Избранное</button>
@@ -110,8 +107,7 @@ b.pr{color:var(--accent2);font-size:15px} s{color:var(--muted)}
 
 <script>
 // --- ТЕМЫ ---
-const root = document.documentElement;
-const themeToggle = document.getElementById('themeToggle');
+const root = document.documentElement, themeToggle = document.getElementById('themeToggle');
 let currentTheme = localStorage.getItem('steam_theme') || 'system';
 function applyTheme(theme) {
   if (theme === 'light') { root.setAttribute('data-theme', 'light'); themeToggle.textContent = '☀️'; }
@@ -124,12 +120,9 @@ themeToggle.onclick = () => { currentTheme = currentTheme === 'light' ? 'dark' :
 // --- ОСНОВНАЯ ЛОГИКА ---
 var $=function(i){return document.getElementById(i)},data=null,sk="d",dir=-1,shown=0,PAGE=60,list=[];
 var isRecMode = false, showHiddenOnly = false, showFavOnly = false;
-
-// Хранилища
 var hiddenGames = new Set(JSON.parse(localStorage.getItem('steam_hidden') || "[]"));
 var favGames = new Set(JSON.parse(localStorage.getItem('steam_fav') || "[]"));
 
-// Восстановление фильтров
 var savedFilters = JSON.parse(localStorage.getItem('steam_filters') || "{}");
 if(savedFilters.reg) $("reg").value = savedFilters.reg;
 if(savedFilters.q) $("q").value = savedFilters.q;
@@ -142,41 +135,31 @@ function money(v){try{return new Intl.NumberFormat("ru-RU",{style:"currency",cur
 function esc(s){return s.replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
 function saveFilters() { localStorage.setItem('steam_filters', JSON.stringify({ reg: $("reg").value, q: $("q").value, md: $("md").value, mp: $("mp").value, ruFilter: $("ruFilter").checked })); }
 
-// Таймер скидки
 function getTimerText(endUnix) {
   if (!endUnix) return "";
   let diff = endUnix - Math.floor(Date.now() / 1000);
   if (diff < 0) return "Скоро закончится";
-  let d = Math.floor(diff / 86400);
-  let h = Math.floor((diff % 86400) / 3600);
+  let d = Math.floor(diff / 86400); let h = Math.floor((diff % 86400) / 3600);
   if (d > 0) return `Осталось: ${d} д.`;
   if (h > 0) return `Осталось: ${h} ч.`;
   return `Осталось: < 1 ч.`;
 }
 
-// Проверка онлайна через Steam API (по клику)
 async function checkOnline(id, btn) {
   btn.textContent = "Ждём...";
   try {
-    const r = await fetch(`https://api.steampowered.com/ISteamUserStats/GetNumberOfCurrentPlayers/v1/?appid=${id}`);
+    const r = await fetch("/api/deals", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ appid: id }) });
     const j = await r.json();
     if (j.response && j.response.player_count !== undefined) {
-       btn.textContent = j.response.player_count.toLocaleString('ru-RU');
-       btn.style.color = "var(--accent2)";
-       btn.style.fontWeight = "bold";
-       btn.disabled = true;
+       btn.textContent = j.response.player_count.toLocaleString('ru-RU'); btn.style.color = "var(--accent2)"; btn.style.fontWeight = "bold"; btn.disabled = true;
     } else { btn.textContent = "Нет данных"; }
   } catch(e) { btn.textContent = "Ошибка"; }
 }
 
-// Скрыть/Вернуть/Избранное
 function showToast(msg, actionText, actionFn) {
-  var container = $("toast-container");
-  var toast = document.createElement("div");
-  toast.className = "toast";
-  toast.innerHTML = `<span>${msg}</span><button>${actionText}</button>`;
-  container.appendChild(toast);
-  setTimeout(() => toast.classList.add("show"), 10);
+  var container = $("toast-container"), toast = document.createElement("div");
+  toast.className = "toast"; toast.innerHTML = `<span>${msg}</span><button>${actionText}</button>`;
+  container.appendChild(toast); setTimeout(() => toast.classList.add("show"), 10);
   toast.querySelector("button").onclick = () => { actionFn(); toast.remove(); };
   setTimeout(() => { toast.classList.remove("show"); setTimeout(() => toast.remove(), 300); }, 4000);
 }
@@ -189,63 +172,88 @@ function hideGame(id, name) {
 function restoreGame(id) { hiddenGames.delete(id); localStorage.setItem('steam_hidden', JSON.stringify(Array.from(hiddenGames))); apply(); }
 function toggleFav(id) { if(favGames.has(id)) favGames.delete(id); else favGames.add(id); localStorage.setItem('steam_fav', JSON.stringify(Array.from(favGames))); apply(); }
 
-var tok=0;
-const delay = ms => new Promise(res => setTimeout(res, ms));
+var tok=0; const delay = ms => new Promise(res => setTimeout(res, ms));
+let allTags = new Set();
 
+// --- МАГИЯ БЫСТРОЙ ЗАГРУЗКИ ---
 async function load(){
-  var my=++tok,cc=$("reg").value,start=0,total=1,map=new Map(),first=true;
-  $("tb").innerHTML='<tr><td colspan="8"><div class="msg"><div class="sp"></div>Собираю скидки…</div></td></tr>';
-  $("status").textContent="Загрузка…";data=null;
+  // Пытаемся достать игры из кэша браузера
+  let cachedData = localStorage.getItem('steam_cache_data');
+  let cacheTime = localStorage.getItem('steam_cache_time');
   
-  // Собираем теги по ходу дела, чтобы заполнить фильтр
-  let allTags = new Set();
+  if (cachedData && cacheTime && (Date.now() - cacheTime < 30 * 60 * 1000)) { // Кэш жив 30 минут
+      data = JSON.parse(cachedData);
+      $("status").textContent = "Загружено из кэша · " + data.items.length + " игр";
+      apply();
+      // В фоне проверяем обновления
+      backgroundLoad(true);
+      return;
+  }
 
+  // Если кэша нет — показываем спиннер и грузим
+  $("tb").innerHTML='<tr><td colspan="8"><div class="msg"><div class="sp"></div>Собираю скидки (первые 200 игр)...</div></td></tr>';
+  backgroundLoad(false);
+}
+
+async function backgroundLoad(isSilent){
+  var my=++tok,cc=$("reg").value,start=0,total=1,map=new Map(),first=true;
+  let itemsArray = [];
+  
   try{
-    while(start<total && start<6000){
+    // Грузим максимум 2000 игр, чтобы не долбить сервер 6000 раз
+    while(start<total && start<2000){
       var r=await fetch("/api/deals?cc="+cc+"&start="+start);
       var t=await r.text(),j;
       try{j=JSON.parse(t)}catch(x){ throw new Error("Ошибка сервера"); }
       if(my!==tok)return;
-      if(!r.ok) { $("status").textContent = "Live · Загружено "+map.size+" игр (Достигнут лимит Steam)"; break; }
+      if(!r.ok) break;
       
       j.items.forEach(function(g){
         map.set(g.i,g);
-        if(g.t) g.t.forEach(tag => allTags.add(tag)); // Собираем теги
+        if(g.t) g.t.forEach(tag => allTags.add(tag));
       });
       total=j.total;start=j.next;
-      data={cc:cc,cur:j.cur,total:map.size,items:Array.from(map.values())};
       
-      $("status").textContent="Live · загружено "+Math.min(start,total)+" из "+total;
-      if(first){first=false; fillTags(allTags); apply();}
+      if(first) {
+        first = false;
+        // Показываем первые игры моментально, не ждем остальные 2000
+        data = { cc: cc, cur: j.cur, total: total, items: Array.from(map.values()) };
+        fillTags(allTags); apply();
+        $("status").textContent = "Live · Догружаю игры в фоне...";
+      }
       
-      if(start < total && start < 6000) await delay(1500); 
+      // Если это первый запуск, делаем паузу, чтобы Steam не забанил
+      if(!isSilent && start < total && start < 2000) await delay(1000); 
       if(!start)break;
     }
-    $("status").textContent="Live · "+map.size+" игр · обновлено в "+new Date().toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"});
+    
+    // Когда всё догрузилось — обновляем массив и сохраняем в кэш
+    data = { cc: cc, cur: data ? data.cur : "RUB", total: map.size, items: Array.from(map.values()) };
     fillTags(allTags); apply();
+    
+    localStorage.setItem('steam_cache_data', JSON.stringify(data));
+    localStorage.setItem('steam_cache_time', Date.now());
+    
+    $("status").textContent = "Live · " + map.size + " игр · обновлено в " + new Date().toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"});
+    
   }catch(e){
-    $("status").textContent="Нет связи со Steam";
     if(!data) $("tb").innerHTML='<tr><td colspan="8"><div class="msg">Ошибка: '+esc(String(e.message))+'</div></td></tr>';
+    $("status").textContent="Нет связи со Steam";
   }
 }
 
-// Заполняем выпадающий список жанров
 function fillTags(tagSet) {
-  const sel = $("tagFilter");
-  const currVal = sel.value;
+  const sel = $("tagFilter"); const currVal = sel.value;
   sel.innerHTML = '<option value="all">Все жанры</option>';
   Array.from(tagSet).sort().forEach(tag => {
-    let opt = document.createElement("option");
-    opt.value = tag; opt.textContent = tag;
-    sel.appendChild(opt);
+    let opt = document.createElement("option"); opt.value = tag; opt.textContent = tag; sel.appendChild(opt);
   });
-  sel.value = currVal; // восстанавливаем выбор
+  sel.value = currVal; 
 }
 
 function apply(){
   if(!data)return;
   saveFilters();
-  
   var q=$("q").value.trim().toLowerCase(),md=+$("md").value,mp=parseFloat($("mp").value),ru=$("ruFilter").checked,tag=$("tagFilter").value;
   
   if (showHiddenOnly) {
@@ -260,17 +268,11 @@ function apply(){
       let matchRu = !ru || g.lang_ru;
       return !hiddenGames.has(g.i) && g.d>=md && (isNaN(mp)||g.p<=mp) && (!q||g.n.toLowerCase().indexOf(q)>-1) && matchRu && matchTag;
     });
-    
     if (isRecMode) {
-      list.sort((a, b) => (b.d * b.r) - (a.d * a.r));
-      list = list.slice(0, 15);
+      list.sort((a, b) => (b.d * b.r) - (a.d * a.r)); list = list.slice(0, 15);
       $("count").textContent = "🔥 Рекомендации (Топ-15)";
     } else {
-      list.sort(function(a,b){
-        var x=a[sk],y=b[sk];
-        if(sk==="n") return dir*x.localeCompare(y);
-        return x===y?b.v-a.v:dir*(x-y)
-      });
+      list.sort(function(a,b){ var x=a[sk],y=b[sk]; if(sk==="n") return dir*x.localeCompare(y); return x===y?b.v-a.v:dir*(x-y) });
       $("count").textContent="Найдено "+list.length+" игр";
     }
   }
@@ -281,81 +283,57 @@ function apply(){
 
 function more(){
   var end=Math.min(shown+PAGE,list.length),tb=$("tb");
-  var oldEnd = tb.querySelector('.end-row');
-  if(oldEnd) oldEnd.remove();
+  var oldEnd = tb.querySelector('.end-row'); if(oldEnd) oldEnd.remove();
 
   for(var i=shown;i<end;i++){
     var g=list[i],tr=document.createElement("tr");tr.className="row";tr.style.transitionDelay=((i-shown)%12)*35+"ms";
     var cls=g.d>=75?"":g.d>=40?" m":" l",col=g.r>=80?"var(--accent2)":g.r>=60?"#f1c40f":"#e74c3c";
-    
-    var safeId = String(g.i).trim();
-    var safeName = String(g.n).replace(/'/g, "\\'").replace(/"/g, '\\"');
+    var safeId = String(g.i).trim(), safeName = String(g.n).replace(/'/g, "\\'").replace(/"/g, '\\"');
     var shortName = esc(g.n).substring(0, 20) + (g.n.length > 20 ? '...' : '');
-    
-    var isFav = favGames.has(g.i);
-    var favStar = isFav ? '<span style="color:var(--gold);">★</span>' : '☆';
+    var isFav = favGames.has(g.i), favStar = isFav ? '<span style="color:var(--gold);">★</span>' : '☆';
     var tagList = g.t ? g.t.slice(0,2).map(t=>`<span class="tag">${esc(t)}</span>`).join('') : '';
     var timerText = getTimerText(g.end);
-
-    var imgHtml = '<div class="img-box"><span>' + shortName + '</span>' +
-      '<img loading="lazy" alt="" src="https://cdn.cloudflare.steamstatic.com/steam/apps/' + safeId + '/header.jpg" onerror="this.style.display=\'none\';"></div>';
-
-    var actionBtn = showHiddenOnly 
-      ? `<button class="btn-act" style="color:var(--accent2);" onclick="restoreGame(${safeId})">↩</button>`
-      : `<button class="btn-act" style="color:var(--danger);" title="Скрыть" onclick="hideGame(${safeId}, '${safeName}')">✖</button>`;
+    var imgHtml = '<div class="img-box"><span>' + shortName + '</span><img loading="lazy" alt="" src="https://cdn.cloudflare.steamstatic.com/steam/apps/' + safeId + '/header.jpg" onerror="this.style.display=\'none\';"></div>';
+    var actionBtn = showHiddenOnly ? `<button class="btn-act" style="color:var(--accent2);" onclick="restoreGame(${safeId})">↩</button>` : `<button class="btn-act" style="color:var(--danger);" title="Скрыть" onclick="hideGame(${safeId}, '${safeName}')">✖</button>`;
 
     tr.innerHTML = `
     <td style="text-align:center;"><button class="btn-act" style="color:${isFav?'var(--gold)':'var(--muted)'};font-size:22px;" onclick="toggleFav(${safeId})">${favStar}</button></td>
-    <td class="g">
-      <div class="gi">${imgHtml}
-        <div>
-          <a target="_blank" href="https://store.steampowered.com/app/${safeId}/?cc=${data.cc}">${esc(g.n)}</a>
-          <div style="margin-top:4px;">${tagList}</div>
-          <div class="timer" style="margin-top:2px;">${timerText}</div>
-        </div>
-      </div>
-    </td>
+    <td class="g"><div class="gi">${imgHtml}<div><a target="_blank" href="https://store.steampowered.com/app/${safeId}/?cc=${data.cc}">${esc(g.n)}</a><div style="margin-top:4px;">${tagList}</div><div class="timer" style="margin-top:2px;">${timerText}</div></div></div></td>
     <td><span class="pill${cls}">−${g.d}%</span></td>
     <td><b class="pr">${money(g.p)}</b></td>
     <td><div class="rt"><div class="rb"><i data-w="${g.r}" style="background:${col}"></i></div>${g.r}%</div></td>
     <td>${g.v.toLocaleString("ru-RU")}</td>
     <td><button class="btn-act" style="font-size:12px;background:var(--surface);border:1px solid var(--border);padding:4px 8px;border-radius:4px;color:var(--muted);" onclick="checkOnline(${safeId}, this)">Узнать</button></td>
     <td style="text-align:center;">${actionBtn}</td>`;
-    
     tb.appendChild(tr);io.observe(tr);
   }
-  
   shown=end;
   if (shown >= list.length) {
     $("more").style.display = "none";
-    if (list.length > 0) {
-        var endRow = document.createElement("tr");
-        endRow.className = "end-row";
-        endRow.innerHTML = '<td colspan="8">🏁 Это все игры, которые удалось найти</td>';
-        tb.appendChild(endRow);
-    }
+    if (list.length > 0) { var endRow = document.createElement("tr"); endRow.className = "end-row"; endRow.innerHTML = '<td colspan="8">🏁 Это все игры, которые удалось найти</td>'; tb.appendChild(endRow); }
   } else { $("more").style.display = "block"; }
 }
 
-// Обработчики событий
 [].forEach.call(document.querySelectorAll("th"),function(t){t.onclick=function(){if(!t.dataset.k)return;var k=t.dataset.k;if(sk===k)dir=-dir;else{sk=k;dir=k==="n"||k==="p"||k==="o"?1:-1}
   if(isRecMode) { isRecMode = false; $("btnRec").classList.remove('active'); $("btnRec").textContent = "🔥 Рекомендации"; }
   apply()
 }});
 
 ["q","md","mp","ruFilter","tagFilter"].forEach(function(i){$(i).oninput=apply; $(i).onchange=apply;});
-$("more").onclick=more;
-$("refresh").onclick=load;
-
+$("more").onclick=more; $("refresh").onclick=function(){ localStorage.removeItem('steam_cache_data'); load(); };
 $("btnRec").onclick=function(){ isRecMode = !isRecMode; showHiddenOnly = false; showFavOnly = false; $("btnFav").classList.remove('active'); $("btnShowHidden").classList.remove('active'); this.classList.toggle('active', isRecMode); this.textContent = isRecMode ? "⏹ Стоп" : "🔥 Рекомендации"; apply(); };
 $("btnFav").onclick=function(){ showFavOnly = !showFavOnly; isRecMode = false; showHiddenOnly = false; $("btnRec").classList.remove('active'); $("btnShowHidden").classList.remove('active'); this.classList.toggle('active', showFavOnly); apply(); };
 $("btnShowHidden").onclick=function(){ showHiddenOnly = !showHiddenOnly; isRecMode = false; showFavOnly = false; $("btnFav").classList.remove('active'); $("btnRec").classList.remove('active'); this.classList.toggle('active', showHiddenOnly); apply(); };
-
 $("btnReset").onclick=function(){ $("q").value=""; $("md").value="0"; $("mp").value=""; $("ruFilter").checked=false; $("tagFilter").value="all"; isRecMode=false; showFavOnly=false; showHiddenOnly=false; $("btnRec").classList.remove('active'); $("btnFav").classList.remove('active'); $("btnShowHidden").classList.remove('active'); apply(); };
+$("reg").onchange=function(){saveFilters(); localStorage.removeItem('steam_cache_data'); load()};
 
-$("reg").onchange=function(){saveFilters();load()};
-
-load();setInterval(load,15*60*1000);
+// Запускаем
+load();
+// Счетчик онлайна
+async function updateSiteCounter() {
+  try { const r = await fetch("https://api.counterapi.dev/v1/steam_deals_pro/visits/up"); const d = await r.json(); if(d && d.count) document.getElementById('siteOnline').textContent = d.count; } catch(e) { document.getElementById('siteOnline').textContent = "1"; }
+}
+updateSiteCounter(); setInterval(updateSiteCounter, 30000);
 </script>
 </body>
 </html>
