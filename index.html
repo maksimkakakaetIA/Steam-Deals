@@ -33,8 +33,13 @@ tr.row.in{opacity:1;transform:none}
 tr.row:hover{background:rgba(102,192,244,.09)}
 td.g{white-space:normal;min-width:240px}
 .gi{display:flex;align-items:center;gap:12px}
-.gi img{width:120px;height:56px;object-fit:cover;border-radius:6px;background:var(--border);transition:transform .3s}
-tr.row:hover .gi img{transform:scale(1.08)}
+
+/* Обновленный стиль для картинки и заглушки */
+.gi .img-box{width:120px;height:56px;border-radius:6px;background:linear-gradient(135deg, var(--surface), var(--border));display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;position:relative;}
+.gi .img-box img{width:100%;height:100%;object-fit:cover;transition:transform .3s;position:absolute;top:0;left:0;z-index:2;}
+.gi .img-box span{font-size:10px;color:var(--muted);text-align:center;padding:4px;z-index:1;font-weight:bold;line-height:1.1;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+tr.row:hover .gi .img-box img{transform:scale(1.08)}
+
 .gi a{color:var(--text);text-decoration:none;font-weight:600}.gi a:hover{color:var(--accent)}
 .pill{display:inline-block;min-width:54px;text-align:center;padding:4px 8px;border-radius:7px;font-weight:800;color:#10170a;background:var(--accent2)}
 .pill.m{background:#f1c40f}.pill.l{background:#e67e22}
@@ -119,17 +124,18 @@ function more(){
     var g=list[i],tr=document.createElement("tr");tr.className="row";tr.style.transitionDelay=((i-shown)%12)*35+"ms";
     var cls=g.d>=75?"":g.d>=40?" m":" l",col=g.r>=80?"var(--accent2)":g.r>=60?"#f1c40f":"#e74c3c";
     
-    // --- БЛОК С КАРТИНКОЙ И ССЫЛКОЙ ---
-    // Делаем безопасный ID, убираем лишние пробелы, если они есть
     var safeId = String(g.i).trim();
-    
-    tr.innerHTML='<td class="g"><div class="gi">' +
-    // Меняем header.jpg на capsule_231x87.jpg (лучше для списка) и добавляем заглушку при ошибке
-    '<img loading="lazy" alt="" src="https://cdn.cloudflare.steamstatic.com/steam/apps/'+safeId+'/capsule_231x87.jpg" onerror="this.src=\'https://cdn.cloudflare.steamstatic.com/steam/apps/'+safeId+'/header.jpg\'; this.onerror=null;">' +
-    // Ссылка на игру
+    var shortName = esc(g.n).substring(0, 20) + (g.n.length > 20 ? '...' : '');
+
+    // Картинка + Заглушка
+    var imgHtml = '<div class="img-box">' +
+      '<span>' + shortName + '</span>' + // Фоновая надпись, если картинка не прогрузится
+      '<img loading="lazy" alt="" src="https://cdn.cloudflare.steamstatic.com/steam/apps/' + safeId + '/header.jpg" ' +
+      'onerror="this.style.display=\'none\';">' + // Если ошибка — просто скрываем картинку, остается красивый фон
+      '</div>';
+
+    tr.innerHTML='<td class="g"><div class="gi">' + imgHtml + 
     '<a target="_blank" rel="noopener" href="https://store.steampowered.com/app/'+safeId+'/?cc='+data.cc+'">'+esc(g.n)+'</a></div></td>'+
-    // ---------------------------------
-    
     '<td><span class="pill'+cls+'">−'+g.d+'%</span></td><td><b class="pr">'+money(g.p)+'</b></td><td><s>'+money(g.o)+'</s></td>'+
     '<td><div class="rt"><div class="rb"><i data-w="'+g.r+'" style="background:'+col+'"></i></div>'+g.r+'%</div></td><td>'+g.v.toLocaleString("ru-RU")+'</td>';
     tb.appendChild(tr);io.observe(tr);
