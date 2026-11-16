@@ -5,15 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Steam Скидки — PRO</title>
 <style>
-:root{--bg:#0b1220;--surface:#141d31;--text:#e8eefc;--muted:#8fa0c4;--accent:#66c0f4;--accent2:#a4d007;--border:#243251;--danger:#e74c3c;--gold:#f1c40f;--night-bg:#000000;--night-surface:#0a0a0a;--night-text:#555555;--night-border:#111111;}
+:root{--bg:#0b1220;--surface:#141d31;--text:#e8eefc;--muted:#8fa0c4;--accent:#66c0f4;--accent2:#a4d007;--border:#243251;--danger:#e74c3c;--gold:#f1c40f;--purple:#7b4dff;}
 [data-theme="light"]{--bg:#eef3fb;--surface:#fff;--text:#13203a;--muted:#5a6b8c;--accent:#1b7fc4;--accent2:#5c7a00;--border:#d3ddef;--danger:#d32f2f;--gold:#d4ac0d;}
-[data-theme="night"]{--bg:var(--night-bg);--surface:var(--night-surface);--text:var(--night-text);--muted:#444;--border:var(--night-border);--accent:#333;--accent2:#444;--danger:#500;--gold:#500;}
+[data-theme="night"]{--bg:#000;--surface:#0a0a0a;--text:#666;--muted:#444;--border:#111;--accent:#222;--accent2:#444;--danger:#500;--gold:#500;}
 
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;overflow-x:hidden;transition:background 0.3s,color 0.3s;}
 .blob{position:fixed;width:46vmax;height:46vmax;border-radius:50%;filter:blur(90px);opacity:.25;pointer-events:none;animation:float 18s ease-in-out infinite alternate;z-index:-1;}
-.b1{background:var(--accent);top:-15vmax;left:-12vmax}.b2{background:#7b4dff;bottom:-18vmax;right:-14vmax;animation-delay:-9s}
+.b1{background:var(--accent);top:-15vmax;left:-12vmax}.b2{background:var(--purple);bottom:-18vmax;right:-14vmax;animation-delay:-9s}
 @keyframes float{to{transform:translate(8vmax,6vmax) scale(1.15)}}
+
 .top-bar{position:absolute;top:20px;right:20px;display:flex;gap:10px;z-index:100;}
 .theme-btn{background:var(--surface);border:1px solid var(--border);border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;box-shadow:0 4px 10px rgba(0,0,0,0.1);}
 main{position:relative;max-width:1400px;margin:0 auto;padding:28px 14px 60px}
@@ -25,15 +26,28 @@ h1{text-align:center;font-size:clamp(28px,6vw,48px);margin:10px 0 6px;background
 @keyframes pulse{0%{box-shadow:0 0 0 0 var(--accent2)}100%{box-shadow:0 0 0 12px transparent}}
 #siteOnline{display:inline-block;transition:transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.3s;}
 #siteOnline.update-anim{transform:translateY(-4px) scale(1.1);color:var(--accent2);}
-.controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:16px;align-items:center;}
-select,input,button{font:inherit;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:999px;padding:8px 14px;transition:transform .2s,border-color .2s;outline:none;cursor:pointer;}
+
+/* Красивые блоки фильтров */
+.panel-container{display:flex;flex-direction:column;gap:12px;margin-bottom:20px;background:rgba(20,29,49,0.4);padding:15px;border-radius:16px;border:1px solid var(--border);}
+[data-theme="light"] .panel-container{background:#fff;box-shadow:0 4px 15px rgba(0,0,0,0.05);}
+.panel-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;align-items:center;}
+.divider{width:1px;height:24px;background:var(--border);margin:0 5px;}
+
+select,input,button{font:inherit;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:999px;padding:8px 14px;transition:all .2s;outline:none;cursor:pointer;white-space:nowrap;}
 select:hover,input:hover,button:hover{transform:translateY(-2px);border-color:var(--accent)}
 input[type=search]{width:180px} input[type=number]{width:100px}
-.btn-rec.active{background:linear-gradient(90deg,#e74c3c,#e67e22);color:#fff;border:none;}
-.btn-hidden.active{background:var(--danger);border-color:var(--danger);color:#fff;}
-.btn-fav.active{background:var(--gold);color:#0b1220;border-color:var(--gold);}
-.btn-toggle.active{background:var(--accent);color:#0b1220;border-color:var(--accent);}
-.btn-reset{background:transparent;border:1px solid var(--muted);color:var(--muted);font-size:13px;padding:6px 12px;}
+label{display:flex;align-items:center;gap:5px;cursor:pointer;font-size:14px;background:var(--surface);border:1px solid var(--border);padding:6px 12px;border-radius:999px;transition:all .2s;}
+label:hover{border-color:var(--accent);}
+label input{width:auto;margin:0;}
+
+.btn-toggle.active{background:var(--accent);color:#0b1220;border-color:var(--accent);font-weight:bold;}
+.btn-rec.active{background:linear-gradient(90deg,#e74c3c,#e67e22);color:#fff;border:none;font-weight:bold;}
+.btn-hidden.active{background:var(--danger);border-color:var(--danger);color:#fff;font-weight:bold;}
+.btn-fav.active{background:var(--gold);color:#0b1220;border-color:var(--gold);font-weight:bold;}
+.btn-random{background:linear-gradient(90deg,var(--purple),var(--accent));color:#fff;border:none;font-weight:bold;}
+.btn-reset{background:transparent;border:1px solid var(--muted);color:var(--muted);}
+.btn-reset:hover{background:var(--danger);border-color:var(--danger);color:#fff;}
+
 .count{text-align:center;color:var(--muted);font-size:13px;margin-bottom:12px}
 .tw{overflow-x:auto;border:1px solid var(--border);border-radius:16px;background:var(--surface);box-shadow:0 10px 30px rgba(0,0,0,0.1);}
 table{width:100%;border-collapse:collapse;min-width:1050px}
@@ -46,7 +60,7 @@ tr.row:hover{background:rgba(102,192,244,.09)}
 td.g{white-space:normal;min-width:260px}
 .gi{display:flex;align-items:center;gap:12px}
 .gi .img-box{width:120px;height:56px;border-radius:6px;background:linear-gradient(135deg, var(--surface), var(--border));display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;position:relative;}
-.gi .img-box img{width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;z-index:2;transition:opacity 0.2s;}
+.gi .img-box img{width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;z-index:2;}
 .gi a{color:var(--text);text-decoration:none;font-weight:600}.gi a:hover{color:var(--accent)}
 .pill{display:inline-block;min-width:54px;text-align:center;padding:4px 8px;border-radius:7px;font-weight:800;color:#10170a;background:var(--accent2)}
 .pill.m{background:#f1c40f}.pill.l{background:#e67e22}
@@ -56,17 +70,15 @@ b.pr{color:var(--accent2);font-size:15px} s{color:var(--muted)}
 .rb{width:64px;height:6px;border-radius:9px;background:var(--border);overflow:hidden}
 .rb i{display:block;height:100%;width:0;border-radius:9px;transition:width 1s .2s}
 .timer{color:#e67e22;font-size:12px;font-weight:bold;}
-.hltb{color:var(--muted);font-size:11px;text-decoration:none;margin-left:5px;}
-.hltb:hover{color:var(--accent);text-decoration:underline;}
 .more{display:block;margin:20px auto 0}
 .msg{text-align:center;color:var(--muted);padding:40px}
 .sp{width:34px;height:34px;border:4px solid var(--border);border-top-color:var(--accent);border-radius:50%;margin:0 auto 14px;animation:spin 1s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-.btn-act{background:transparent;border:1px solid transparent;font-size:18px;padding:4px;cursor:pointer;border-radius:6px;transition:background 0.2s;}
-.btn-act:hover{background:rgba(255,255,255,0.1);}
+.btn-act{background:transparent;border:1px solid transparent;font-size:16px;padding:4px 6px;cursor:pointer;border-radius:6px;transition:background 0.2s;color:var(--muted);}
+.btn-act:hover{background:rgba(255,255,255,0.1);color:var(--text);}
 .end-row td {text-align:center; padding: 40px; color: var(--muted); font-size: 16px; font-weight: bold; border-bottom: none;}
 
-/* Модалка для рулетки */
+/* Модалка */
 .modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);backdrop-filter:blur(5px);display:flex;align-items:center;justify-content:center;z-index:2000;opacity:0;pointer-events:none;transition:opacity 0.3s;}
 .modal-overlay.show{opacity:1;pointer-events:auto;}
 .modal-content{background:var(--surface);border:1px solid var(--border);padding:30px;border-radius:20px;max-width:500px;width:90%;text-align:center;transform:translateY(20px);transition:transform 0.3s;box-shadow:0 20px 50px rgba(0,0,0,0.5);}
@@ -79,9 +91,7 @@ b.pr{color:var(--accent2);font-size:15px} s{color:var(--muted)}
 </style>
 </head>
 <body>
-<div class="top-bar">
-  <button class="theme-btn" id="themeToggle" title="Сменить тему">🌓</button>
-</div>
+<div class="top-bar"><button class="theme-btn" id="themeToggle" title="Сменить тему">🌓</button></div>
 <div class="blob b1"></div><div class="blob b2"></div>
 <main>
 <h1>Steam Скидки PRO</h1>
@@ -91,26 +101,35 @@ b.pr{color:var(--accent2);font-size:15px} s{color:var(--muted)}
   <div class="badge">👀 На сайте: <b id="siteOnline" style="color:var(--accent);">0</b></div>
 </div>
 
-<div class="controls">
-<select id="reg"><option value="ru">🇷🇺 RUB</option><option value="us">🇺🇸 USD</option><option value="de">🇪🇺 EUR</option></select>
-<input id="q" type="search" placeholder="Поиск игры…">
-<select id="tagFilter"><option value="all">Все жанры</option></select>
-<select id="md"><option value="0">Скидка от 0%</option><option value="50">От 50%</option><option value="75">От 75%</option></select>
-<input id="mp" type="number" min="0" placeholder="Цена до…">
-<label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:14px;">
-  <input type="checkbox" id="ruFilter" style="width:auto;border-radius:4px;"> 🇷🇺 Русский
-</label>
-<label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:14px;">
-  <input type="checkbox" id="baseGameFilter" style="width:auto;border-radius:4px;"> Только игры
-</label>
-<button id="btnSoon" class="btn-toggle">⏳ Успеть купить</button>
-<button id="btnProfit" class="btn-toggle">💎 Выгода</button>
-<button id="refresh">↻ Обновить</button>
-<button id="btnRec" class="btn-rec">🔥 Рекомендации</button>
-<button id="btnFav" class="btn-fav">⭐ Избранное</button>
-<button id="btnShowHidden" class="btn-hidden">🗑 Скрытые</button>
-<button id="btnRandom" class="btn-toggle" style="background:linear-gradient(90deg,#7b4dff,#66c0f4);color:#fff;border:none;">🎲 Рулетка</button>
-<button id="btnReset" class="btn-reset">Сброс</button>
+<!-- Удобная панель фильтров -->
+<div class="panel-container">
+  <div class="panel-row">
+    <select id="reg">
+      <option value="ru">🇷🇺 RUB</option><option value="us">🇺🇸 USD</option><option value="de">🇪🇺 EUR</option>
+      <option value="ua">🇺🇦 UAH</option><option value="kz">🇰🇿 KZT</option><option value="gb">🇬🇧 GBP</option>
+      <option value="pl">🇵🇱 PLN</option><option value="tr">🇹🇷 TRY</option>
+    </select>
+    <input id="q" type="search" placeholder="Поиск игры…">
+    <select id="tagFilter"><option value="all">Все жанры</option></select>
+    <select id="md"><option value="0">Скидка от 0%</option><option value="50">От 50%</option><option value="75">От 75%</option></select>
+    <input id="mp" type="number" min="0" placeholder="Цена до…">
+    <div class="divider"></div>
+    <label><input type="checkbox" id="ruFilter"> 🇷🇺 Русский</label>
+    <label><input type="checkbox" id="baseGameFilter"> Только игры</label>
+    <label><input type="checkbox" id="deckFilter"> 🎮 Deck Verified</label>
+  </div>
+  
+  <div class="panel-row" style="margin-top:10px;">
+    <button id="btnSoon" class="btn-toggle">⏳ Успеть купить</button>
+    <button id="btnProfit" class="btn-toggle">💎 Выгода</button>
+    <button id="btnRec" class="btn-rec">🔥 Рекомендации</button>
+    <button id="btnFav" class="btn-fav">⭐ Избранное</button>
+    <button id="btnShowHidden" class="btn-hidden">🗑 Скрытые</button>
+    <button id="btnRandom" class="btn-random">🎲 Рулетка</button>
+    <div class="divider"></div>
+    <button id="refresh" class="btn-toggle">↻ Обновить</button>
+    <button id="btnReset" class="btn-reset">Сброс</button>
+  </div>
 </div>
 
 <div class="count" id="count"></div>
@@ -129,7 +148,7 @@ b.pr{color:var(--accent2);font-size:15px} s{color:var(--muted)}
 <button class="more" id="more" hidden>Показать ещё</button>
 </main>
 
-<!-- Модалка -->
+<!-- Модалка для рулетки и картинок -->
 <div class="modal-overlay" id="modal">
   <div class="modal-content">
     <img id="modalImg" class="modal-img" src="" alt="">
@@ -151,15 +170,14 @@ async function updateSiteCounter() {
     const data = await r.json();
     const el = document.getElementById('siteOnline');
     if (data.online !== undefined && data.online !== lastOnline) {
-      lastOnline = data.online;
-      el.textContent = data.online;
+      lastOnline = data.online; el.textContent = data.online;
       el.classList.remove('update-anim'); void el.offsetWidth; el.classList.add('update-anim');
     }
   } catch(e) {}
 }
 updateSiteCounter(); setInterval(updateSiteCounter, 15000);
 
-// --- ТЕМЫ (Вкл. Ночную) ---
+// --- ТЕМЫ (С ночным режимом) ---
 const root = document.documentElement, themeToggle = document.getElementById('themeToggle');
 let currentTheme = localStorage.getItem('steam_theme') || 'system';
 function applyTheme(theme) {
@@ -170,11 +188,7 @@ function applyTheme(theme) {
 }
 applyTheme(currentTheme);
 themeToggle.onclick = () => { 
-  // Переключение по кругу: system -> dark -> light -> night -> system
-  if(currentTheme === 'system') currentTheme = 'dark';
-  else if(currentTheme === 'dark') currentTheme = 'light';
-  else if(currentTheme === 'light') currentTheme = 'night';
-  else currentTheme = 'system';
+  if(currentTheme === 'system') currentTheme = 'dark'; else if(currentTheme === 'dark') currentTheme = 'light'; else if(currentTheme === 'light') currentTheme = 'night'; else currentTheme = 'system';
   localStorage.setItem('steam_theme', currentTheme); applyTheme(currentTheme); 
 };
 
@@ -190,12 +204,12 @@ function closeModal() { document.getElementById('modal').classList.remove('show'
 
 // --- ОСНОВНАЯ ЛОГИКА ---
 var $=function(i){return document.getElementById(i)},data=null,sk="d",dir=-1,shown=0,PAGE=60,list=[];
-var isRecMode = false, showHiddenOnly = false, showFavOnly = false;
-var isSoonMode = false, isProfitMode = false;
+var isRecMode = false, showHiddenOnly = false, showFavOnly = false, isSoonMode = false, isProfitMode = false;
 
 var hiddenGames = new Set(JSON.parse(localStorage.getItem('steam_hidden') || "[]"));
 var favGames = new Set(JSON.parse(localStorage.getItem('steam_fav') || "[]"));
 
+// Восстановление фильтров
 var savedFilters = JSON.parse(localStorage.getItem('steam_filters') || "{}");
 if(savedFilters.reg) $("reg").value = savedFilters.reg;
 if(savedFilters.q) $("q").value = savedFilters.q;
@@ -203,11 +217,12 @@ if(savedFilters.md) $("md").value = savedFilters.md;
 if(savedFilters.mp) $("mp").value = savedFilters.mp;
 if(savedFilters.ruFilter) $("ruFilter").checked = true;
 if(savedFilters.baseGameFilter) $("baseGameFilter").checked = true;
+if(savedFilters.deckFilter) $("deckFilter").checked = true;
 
 var io=new IntersectionObserver(function(es){es.forEach(function(x){if(x.isIntersecting){var r=x.target;r.classList.add("in");var b=r.querySelector(".rb i");if(b)b.style.width=b.dataset.w+"%";io.unobserve(r)}})},{threshold:.05});
 function money(v){try{return new Intl.NumberFormat("ru-RU",{style:"currency",currency:data.cur,maximumFractionDigits:v%1?2:0}).format(v)}catch(e){return v.toFixed(2)}}
 function esc(s){return s.replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
-function saveFilters() { localStorage.setItem('steam_filters', JSON.stringify({ reg: $("reg").value, q: $("q").value, md: $("md").value, mp: $("mp").value, ruFilter: $("ruFilter").checked, baseGameFilter: $("baseGameFilter").checked })); }
+function saveFilters() { localStorage.setItem('steam_filters', JSON.stringify({ reg: $("reg").value, q: $("q").value, md: $("md").value, mp: $("mp").value, ruFilter: $("ruFilter").checked, baseGameFilter: $("baseGameFilter").checked, deckFilter: $("deckFilter").checked })); }
 
 function getTimerText(endUnix) {
   if (!endUnix) return "";
@@ -264,7 +279,7 @@ async function load(){
   if (cachedData && cacheTime && (Date.now() - cacheTime < 30 * 60 * 1000)) {
       data = JSON.parse(cachedData); $("status").textContent = "Загружено из кэша · " + data.items.length + " игр"; apply(); backgroundLoad(true); return;
   }
-  $("tb").innerHTML='<tr><td colspan="8"><div class="msg"><div class="sp"></div>Собираю скидки (первые 200 игр)...</div></td></tr>';
+  $("tb").innerHTML='<tr><td colspan="8"><div class="msg"><div class="sp"></div>Собираю скидки...</div></td></tr>';
   backgroundLoad(false);
 }
 
@@ -275,7 +290,12 @@ async function backgroundLoad(isSilent){
       var r=await fetch("/api/deals?cc="+cc+"&start="+start);
       var t=await r.text(),j; try{j=JSON.parse(t)}catch(x){ throw new Error("Ошибка сервера"); }
       if(my!==tok)return; if(!r.ok) break;
-      j.items.forEach(function(g){ map.set(g.i,g); if(g.t) g.t.forEach(tag => allTags.add(tag)); });
+      
+      j.items.forEach(function(g){ 
+          // Защита от 0 рублей (если Steam не отдал цену, пропускаем)
+          if(g.p > 0) { map.set(g.i,g); if(g.t) g.t.forEach(tag => allTags.add(tag)); }
+      });
+      
       total=j.total;start=j.next;
       if(first) { first = false; data = { cc: cc, cur: j.cur, total: total, items: Array.from(map.values()) }; fillTags(allTags); apply(); $("status").textContent = "Live · Догружаю игры в фоне..."; }
       if(!isSilent && start < total && start < 2000) await delay(1000); 
@@ -298,9 +318,8 @@ function fillTags(tagSet) {
 }
 
 function apply(){
-  if(!data)return;
-  saveFilters();
-  var q=$("q").value.trim().toLowerCase(),md=+$("md").value,mp=parseFloat($("mp").value),ru=$("ruFilter").checked,tag=$("tagFilter").value, baseOnly=$("baseGameFilter").checked;
+  if(!data)return; saveFilters();
+  var q=$("q").value.trim().toLowerCase(),md=+$("md").value,mp=parseFloat($("mp").value),ru=$("ruFilter").checked,tag=$("tagFilter").value, baseOnly=$("baseGameFilter").checked, deck=$("deckFilter").checked;
   
   if (showHiddenOnly) {
     list = data.items.filter(g => hiddenGames.has(g.i)); $("count").textContent = "🗑 Скрытые игры: " + list.length;
@@ -311,7 +330,8 @@ function apply(){
       let matchTag = (tag === "all") || (g.t && g.t.includes(tag));
       let matchRu = !ru || g.lang_ru;
       let matchBase = !baseOnly || (!g.n.toLowerCase().includes("soundtrack") && !g.n.toLowerCase().includes("dlc") && !g.n.toLowerCase().includes("artbook"));
-      return !hiddenGames.has(g.i) && g.d>=md && (isNaN(mp)||g.p<=mp) && (!q||g.n.toLowerCase().indexOf(q)>-1) && matchRu && matchTag && matchBase;
+      let matchDeck = !deck || g.deck; // если в deals.js будет передаваться g.deck
+      return !hiddenGames.has(g.i) && g.d>=md && (isNaN(mp)||g.p<=mp) && (!q||g.n.toLowerCase().indexOf(q)>-1) && matchRu && matchTag && matchBase && matchDeck;
     });
 
     if (isSoonMode) { list = list.filter(g => g.end && (g.end - Date.now()/1000) < 86400); $("count").textContent = "⏳ Скидки сгорают за 24 часа: " + list.length; }
@@ -340,15 +360,13 @@ function more(){
     var timerText = getTimerText(g.end);
     var imgHtml = '<div class="img-box"><span>' + shortName + '</span><img loading="lazy" alt="" src="https://cdn.cloudflare.steamstatic.com/steam/apps/' + safeId + '/header.jpg" onerror="this.style.display=\'none\';"></div>';
     
-    // Ссылки на HLTB и Копирование
-    var hltbLink = `<a href="https://howlongtobeat.com/?q=${encodeURIComponent(g.n)}" target="_blank" class="hltb" title="Узнать время прохождения">⏱ HLTB</a>`;
-    var copyBtn = `<button class="btn-act" style="font-size:14px;color:var(--muted);" onclick="copyLink(${safeId}, this)" title="Скопировать ссылку">🔗</button>`;
-
+    var hltbLink = `<a href="https://howlongtobeat.com/?q=${encodeURIComponent(g.n)}" target="_blank" class="hltb" title="Узнать время прохождения" style="color:var(--muted);font-size:11px;margin-left:5px;text-decoration:none;">⏱ Время</a>`;
+    var copyBtn = `<button class="btn-act" onclick="copyLink(${safeId}, this)" title="Скопировать ссылку">🔗</button>`;
     var actionBtn = showHiddenOnly ? `<button class="btn-act" style="color:var(--accent2);" onclick="restoreGame(${safeId})">↩</button>` : `<button class="btn-act" style="color:var(--danger);" title="Скрыть" onclick="hideGame(${safeId}, '${safeName}')">✖</button>`;
 
     tr.innerHTML = `
-    <td style="text-align:center;"><button class="btn-act" style="color:${isFav?'var(--gold)':'var(--muted)'};font-size:22px;" onclick="toggleFav(${safeId})">${favStar}</button></td>
-    <td class="g"><div class="gi">${imgHtml}<div><a target="_blank" href="https://store.steampowered.com/app/${safeId}/?cc=${data.cc}">${esc(g.n)}</a><div>${tagList}${hltbLink}</div><div class="timer" style="margin-top:2px;">${timerText}</div></div></div></td>
+    <td style="text-align:center;"><button class="btn-act" style="color:${isFav?'var(--gold)':'var(--muted)'};font-size:20px;" onclick="toggleFav(${safeId})">${favStar}</button></td>
+    <td class="g"><div class="gi">${imgHtml}<div><a target="_blank" href="https://store.steampowered.com/app/${safeId}/?cc=${data.cc}">${esc(g.n)}</a><div>${tagList} ${hltbLink}</div><div class="timer" style="margin-top:2px;">${timerText}</div></div></div></td>
     <td><span class="pill${cls}">−${g.d}%</span></td>
     <td><b class="pr">${money(g.p)}</b></td>
     <td><div class="rt"><div class="rb"><i data-w="${g.r}" style="background:${col}"></i></div>${g.r}%</div></td>
@@ -369,19 +387,29 @@ function more(){
   apply()
 }});
 
-["q","md","mp","ruFilter","tagFilter","baseGameFilter"].forEach(function(i){$(i).oninput=apply; $(i).onchange=apply;});
+["q","md","mp","ruFilter","tagFilter","baseGameFilter","deckFilter"].forEach(function(i){$(i).oninput=apply; $(i).onchange=apply;});
 $("more").onclick=more; $("refresh").onclick=function(){ localStorage.removeItem('steam_cache_data'); load(); };
 
-$("btnRec").onclick=function(){ isRecMode = !isRecMode; showHiddenOnly = false; showFavOnly = false; isSoonMode = false; isProfitMode = false; $("btnFav").classList.remove('active'); $("btnShowHidden").classList.remove('active'); $("btnSoon").classList.remove('active'); $("btnProfit").classList.remove('active'); this.classList.toggle('active', isRecMode); this.textContent = isRecMode ? "⏹ Стоп" : "🔥 Рекомендации"; apply(); };
-$("btnFav").onclick=function(){ showFavOnly = !showFavOnly; isRecMode = false; showHiddenOnly = false; isSoonMode = false; isProfitMode = false; $("btnRec").classList.remove('active'); $("btnShowHidden").classList.remove('active'); $("btnSoon").classList.remove('active'); $("btnProfit").classList.remove('active'); this.classList.toggle('active', showFavOnly); apply(); };
-$("btnShowHidden").onclick=function(){ showHiddenOnly = !showHiddenOnly; isRecMode = false; showFavOnly = false; isSoonMode = false; isProfitMode = false; $("btnFav").classList.remove('active'); $("btnRec").classList.remove('active'); $("btnSoon").classList.remove('active'); $("btnProfit").classList.remove('active'); this.classList.toggle('active', showHiddenOnly); apply(); };
+function resetModes() {
+  isRecMode = false; showHiddenOnly = false; showFavOnly = false; isSoonMode = false; isProfitMode = false;
+  $("btnRec").classList.remove('active'); $("btnRec").textContent = "🔥 Рекомендации";
+  $("btnFav").classList.remove('active'); $("btnShowHidden").classList.remove('active');
+  $("btnSoon").classList.remove('active'); $("btnProfit").classList.remove('active');
+}
 
-// Новые кнопки
-$("btnSoon").onclick=function(){ isSoonMode = !isSoonMode; isRecMode = false; showFavOnly = false; showHiddenOnly = false; isProfitMode = false; $("btnRec").classList.remove('active'); $("btnFav").classList.remove('active'); $("btnShowHidden").classList.remove('active'); $("btnProfit").classList.remove('active'); this.classList.toggle('active', isSoonMode); apply(); };
-$("btnProfit").onclick=function(){ isProfitMode = !isProfitMode; isRecMode = false; showFavOnly = false; showHiddenOnly = false; isSoonMode = false; $("btnRec").classList.remove('active'); $("btnFav").classList.remove('active'); $("btnShowHidden").classList.remove('active'); $("btnSoon").classList.remove('active'); this.classList.toggle('active', isProfitMode); apply(); };
+$("btnRec").onclick=function(){ resetModes(); isRecMode = true; this.classList.add('active'); this.textContent = "⏹ Стоп"; apply(); };
+$("btnFav").onclick=function(){ resetModes(); showFavOnly = true; this.classList.add('active'); apply(); };
+$("btnShowHidden").onclick=function(){ resetModes(); showHiddenOnly = true; this.classList.add('active'); apply(); };
+$("btnSoon").onclick=function(){ resetModes(); isSoonMode = true; this.classList.add('active'); apply(); };
+$("btnProfit").onclick=function(){ resetModes(); isProfitMode = true; this.classList.add('active'); apply(); };
+
 $("btnRandom").onclick=function(){ if(list.length > 0) { const r = list[Math.floor(Math.random() * list.length)]; openModal(r); } else { showToast("Список пуст", "OK", ()=>{}); } };
 
-$("btnReset").onclick=function(){ $("q").value=""; $("md").value="0"; $("mp").value=""; $("ruFilter").checked=false; $("tagFilter").value="all"; $("baseGameFilter").checked=false; isRecMode=false; showFavOnly=false; showHiddenOnly=false; isSoonMode=false; isProfitMode=false; $("btnRec").classList.remove('active'); $("btnFav").classList.remove('active'); $("btnShowHidden").classList.remove('active'); $("btnSoon").classList.remove('active'); $("btnProfit").classList.remove('active'); apply(); };
+$("btnReset").onclick=function(){ 
+  $("q").value=""; $("md").value="0"; $("mp").value=""; $("ruFilter").checked=false; $("tagFilter").value="all"; $("baseGameFilter").checked=false; $("deckFilter").checked=false;
+  resetModes(); apply(); 
+};
+
 $("reg").onchange=function(){saveFilters(); localStorage.removeItem('steam_cache_data'); load()};
 load();
 </script>
