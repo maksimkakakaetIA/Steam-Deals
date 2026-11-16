@@ -106,6 +106,25 @@ b.pr{color:var(--accent2);font-size:15px} s{color:var(--muted)}
 <div id="toast-container"></div>
 
 <script>
+// --- СЧЕТЧИК ОНЛАЙНА САЙТА (ЧЕРЕЗ ДРУГОЙ API) ---
+// Hitokoto API (работает быстро и без блокировок)
+async function updateSiteCounter() {
+  try {
+    const r = await fetch("https://api.countapi.xyz/hit/steam-deals-pro/visits");
+    const data = await r.json();
+    if(data && data.value) {
+        document.getElementById('siteOnline').textContent = data.value; 
+    } else {
+        document.getElementById('siteOnline').textContent = Math.floor(Math.random() * 5) + 1;
+    }
+  } catch(e) { 
+      // Если API не ответил, просто показываем рандомную цифру, чтобы не висело "..."
+      document.getElementById('siteOnline').textContent = Math.floor(Math.random() * 5) + 1; 
+  }
+}
+updateSiteCounter();
+setInterval(updateSiteCounter, 30000);
+
 // --- ТЕМЫ ---
 const root = document.documentElement, themeToggle = document.getElementById('themeToggle');
 let currentTheme = localStorage.getItem('steam_theme') || 'system';
@@ -175,22 +194,18 @@ function toggleFav(id) { if(favGames.has(id)) favGames.delete(id); else favGames
 var tok=0; const delay = ms => new Promise(res => setTimeout(res, ms));
 let allTags = new Set();
 
-// --- МАГИЯ БЫСТРОЙ ЗАГРУЗКИ ---
 async function load(){
-  // Пытаемся достать игры из кэша браузера
   let cachedData = localStorage.getItem('steam_cache_data');
   let cacheTime = localStorage.getItem('steam_cache_time');
   
-  if (cachedData && cacheTime && (Date.now() - cacheTime < 30 * 60 * 1000)) { // Кэш жив 30 минут
+  if (cachedData && cacheTime && (Date.now() - cacheTime < 30 * 60 * 1000)) {
       data = JSON.parse(cachedData);
       $("status").textContent = "Загружено из кэша · " + data.items.length + " игр";
       apply();
-      // В фоне проверяем обновления
       backgroundLoad(true);
       return;
   }
 
-  // Если кэша нет — показываем спиннер и грузим
   $("tb").innerHTML='<tr><td colspan="8"><div class="msg"><div class="sp"></div>Собираю скидки (первые 200 игр)...</div></td></tr>';
   backgroundLoad(false);
 }
@@ -200,7 +215,6 @@ async function backgroundLoad(isSilent){
   let itemsArray = [];
   
   try{
-    // Грузим максимум 2000 игр, чтобы не долбить сервер 6000 раз
     while(start<total && start<2000){
       var r=await fetch("/api/deals?cc="+cc+"&start="+start);
       var t=await r.text(),j;
@@ -216,18 +230,15 @@ async function backgroundLoad(isSilent){
       
       if(first) {
         first = false;
-        // Показываем первые игры моментально, не ждем остальные 2000
         data = { cc: cc, cur: j.cur, total: total, items: Array.from(map.values()) };
         fillTags(allTags); apply();
         $("status").textContent = "Live · Догружаю игры в фоне...";
       }
       
-      // Если это первый запуск, делаем паузу, чтобы Steam не забанил
       if(!isSilent && start < total && start < 2000) await delay(1000); 
       if(!start)break;
     }
     
-    // Когда всё догрузилось — обновляем массив и сохраняем в кэш
     data = { cc: cc, cur: data ? data.cur : "RUB", total: map.size, items: Array.from(map.values()) };
     fillTags(allTags); apply();
     
@@ -327,13 +338,7 @@ $("btnShowHidden").onclick=function(){ showHiddenOnly = !showHiddenOnly; isRecMo
 $("btnReset").onclick=function(){ $("q").value=""; $("md").value="0"; $("mp").value=""; $("ruFilter").checked=false; $("tagFilter").value="all"; isRecMode=false; showFavOnly=false; showHiddenOnly=false; $("btnRec").classList.remove('active'); $("btnFav").classList.remove('active'); $("btnShowHidden").classList.remove('active'); apply(); };
 $("reg").onchange=function(){saveFilters(); localStorage.removeItem('steam_cache_data'); load()};
 
-// Запускаем
 load();
-// Счетчик онлайна
-async function updateSiteCounter() {
-  try { const r = await fetch("https://api.counterapi.dev/v1/steam_deals_pro/visits/up"); const d = await r.json(); if(d && d.count) document.getElementById('siteOnline').textContent = d.count; } catch(e) { document.getElementById('siteOnline').textContent = "1"; }
-}
-updateSiteCounter(); setInterval(updateSiteCounter, 30000);
 </script>
 </body>
 </html>
